@@ -1,11 +1,3 @@
---======================= CHECK GAME (JJS) =======================--
-local JJS_PLACE_ID = 9391468976 -- Jujutsu Shenanigans
-
-if game.PlaceId ~= JJS_PLACE_ID then
-    LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
-    return
-end
-
 local loadedFn = loadstring(game:HttpGet("https://raw.githubusercontent.com/liebertsx/Tora-Library/main/src/librarynew", true))()
 local Window = loadedFn:CreateWindow("JJS Gojo 0.2")
 
@@ -14,6 +6,14 @@ local Players     = game:GetService("Players")
 local RunService  = game:GetService("RunService")
 local StarterGui  = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
+
+--======================= CHECK GAME (JJS) =======================--
+local JJS_PLACE_ID = 9391468976 -- Jujutsu Shenanigans
+
+if game.PlaceId ~= JJS_PLACE_ID then
+    LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
+    return
+end
 
 --======================= NOTIFY =======================--
 local function Notify(title, text, duration)
