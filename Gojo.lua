@@ -1,5 +1,5 @@
-local loadedFn = loadstring(game:HttpGet("https://raw.githubusercontent.com/liebertsx/Tora-Library/main/src/librarynew", true))()
-local Window = loadedFn:CreateWindow("JJS Gojo 0.2")
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/liebertsx/Tora-Library/main/src/librarynew", true))()
+local Window = library:CreateWindow("JJS Gojo 0.2")
 
 --======================= SERVICES =======================--
 local Players     = game:GetService("Players")
