@@ -1,4 +1,3 @@
--- this was deobfuscated by Luaxom at https://discord.gg/Sps39CydcZ
 local v1 = game:GetService("Players")
 local v2 = game:GetService("Lighting")
 local v3 = game:GetService("UserInputService")
