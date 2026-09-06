@@ -221,3 +221,5 @@ Window:AddToggle({
 Window:AddLabel({
     text = "Make by HKTD Roblox",
 })
+
+library:Init()
