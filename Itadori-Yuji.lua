@@ -1,8 +1,14 @@
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
-
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/liebertsx/Tora-Library/main/src/librarynew", true))()
 local Window = library:CreateWindow("Itadori Yuji")
+
+-- ──────────────────────────────────────────────
+--  SERVICES
+-- ──────────────────────────────────────────────
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService      = game:GetService("TweenService")
+local StarterGui        = game:GetService("StarterGui")
+local Players           = game:GetService("Players")
+local LocalPlayer       = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
 if game.PlaceId ~= 9391468976 then
     LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
@@ -10,10 +16,18 @@ if game.PlaceId ~= 9391468976 then
 end
 
 -- ──────────────────────────────────────────────
---  SERVICES
+--  NOTIFICATION
 -- ──────────────────────────────────────────────
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService      = game:GetService("TweenService")
+local function Notify(title, text, duration)
+    duration = duration or 3
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = duration
+        })
+    end)
+end
 
 -- ──────────────────────────────────────────────
 --  CONFIG
@@ -374,10 +388,9 @@ if targetRemote then
 
                     local shouldRetryFire = (_G.retryfire ~= nil) and _G.retryfire or CONFIG.RetryFire
 
-                    -- Chỉ fire retry khi đủ điều kiện (đã bỏ Distance Check)
                     if dashSuccess and isTargetFacingAway(targetRoot) and shouldRetryFire then
                         isRetrying = true
-                        local success, err = pcall(function()
+                        pcall(function()
                             targetRemote:FireServer(table.unpack(args))
                             task.wait(CONFIG.FireDelay)
                             if isLocalAlive() and targetRoot and targetRoot.Parent and isAliveModel(targetRoot.Parent) then
@@ -400,6 +413,8 @@ if targetRemote then
 
         return result
     end)
+else
+    Notify("Auto Black Flash", "Error: Remote not found!", 3)
 end
 
 -- ──────────────────────────────────────────────
@@ -410,6 +425,16 @@ Window:AddToggle({
     flag = "AutoBlackFlash",
     callback = function(value)
         AutoBlackFlash = value
+        if value then
+            if targetRemote then
+                Notify("Auto Black Flash", "Enabled", 2)
+            else
+                Notify("Auto Black Flash", "Error: Remote not found!", 3)
+                AutoBlackFlash = false
+            end
+        else
+            Notify("Auto Black Flash", "Disabled", 2)
+        end
     end
 })
 
