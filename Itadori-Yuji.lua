@@ -1,6 +1,11 @@
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/liebertsx/Tora-Library/main/src/librarynew", true))()
 local Window = library:CreateWindow("Itadori Yuji")
 
+if game.PlaceId ~= 9391468976 then
+    game.Players.LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
+    return
+end
+
 -- ──────────────────────────────────────────────
 --  SERVICES & PLAYER
 -- ──────────────────────────────────────────────
@@ -8,11 +13,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService      = game:GetService("TweenService")
 local Players           = game:GetService("Players")
 local LocalPlayer       = Players.LocalPlayer
-
-if game.PlaceId ~= 9391468976 then
-    game.Players.LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
-    return
-end
 
 -- ──────────────────────────────────────────────
 --  CONFIG
@@ -70,19 +70,25 @@ local function getHRP()
     return char and char:FindFirstChild("HumanoidRootPart")
 end
 
-local function getAnimator()
+local function getHumanoid()
     local char = LocalPlayer.Character
-    if not char then return nil end
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return nil end
-    return humanoid:FindFirstChildOfClass("Animator")
+    return char and char:FindFirstChildOfClass("Humanoid")
+end
+
+local function getAnimator()
+    local humanoid = getHumanoid()
+    return humanoid and humanoid:FindFirstChildOfClass("Animator")
+end
+
+local function isLocalAlive()
+    local humanoid = getHumanoid()
+    return humanoid and humanoid.Health > 0
 end
 
 local function isAliveModel(model)
-    local myChar = LocalPlayer.Character
-    if model == myChar then return false end
+    if not model or model == LocalPlayer.Character then return false end
     local root = model:FindFirstChild("HumanoidRootPart")
-    local humanoid = model:FindFirstChild("Humanoid")
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
     return root and humanoid and humanoid.Health > 0
 end
 
@@ -107,6 +113,7 @@ local function findNearestTarget()
     local function checkModel(model)
         if not isAliveModel(model) then return end
         local root = model:FindFirstChild("HumanoidRootPart")
+        if not root then return end
         local dist = (hrp.Position - root.Position).Magnitude
         if dist < bestDist then
             bestDist = dist
@@ -150,9 +157,9 @@ local function createTrail(rootPart)
     trail.FaceCamera = true
 
     task.delay(CONFIG.TrailLifetime + 0.1, function()
-        trail:Destroy()
-        a0:Destroy()
-        a1:Destroy()
+        if trail then trail:Destroy() end
+        if a0 then a0:Destroy() end
+        if a1 then a1:Destroy() end
     end)
 end
 
@@ -203,7 +210,7 @@ local function playAttackAnimation()
     track:Play()
 
     task.delay(1.113, function()
-        if track.IsPlaying then
+        if track and track.IsPlaying then
             track:Stop()
         end
     end)
@@ -213,19 +220,21 @@ end
 --  CURVED DASH
 -- ──────────────────────────────────────────────
 local function performCurvedDash(targetRoot)
+    if not isLocalAlive() then return false end
     local hrp = getHRP()
-    if not hrp then return end
+    if not hrp or not targetRoot or not targetRoot.Parent then return false end
 
     local myPos = hrp.Position
     local destPos = (targetRoot.CFrame * CFrame.new(0, 0, CONFIG.BehindOffset)).Position
 
+    -- Đã ở phía sau rồi
     if (myPos - destPos).Magnitude < CONFIG.AlreadyBehindTolerance then
         playAttackAnimation()
-        return
+        return true
     end
 
     local dist = (destPos - myPos).Magnitude
-    if dist < 0.5 then return end
+    if dist < 0.5 then return false end
 
     local dir = (destPos - myPos).Unit
     local side = dir:Cross(Vector3.new(0, 1, 0)).Unit
@@ -254,6 +263,11 @@ local function performCurvedDash(targetRoot)
     local dashTrack = playDashAnimation(dashDirection, totalTime)
 
     for i, wp in ipairs(waypoints) do
+        if not isLocalAlive() or not targetRoot.Parent then
+            if dashTrack and dashTrack.IsPlaying then dashTrack:Stop(0.1) end
+            return false
+        end
+
         local lookDir = (i < #waypoints)
             and (waypoints[i + 1] - wp).Unit
             or (targetRoot.Position - wp).Unit
@@ -265,12 +279,18 @@ local function performCurvedDash(targetRoot)
         task.wait(segTime)
     end
 
+    if not isLocalAlive() or not targetRoot.Parent then
+        if dashTrack and dashTrack.IsPlaying then dashTrack:Stop(0.1) end
+        return false
+    end
+
     hrp.CFrame = CFrame.lookAt(destPos, targetRoot.Position)
 
     if dashTrack and dashTrack.IsPlaying then
         dashTrack:Stop(0.1)
     end
     playAttackAnimation()
+    return true
 end
 
 -- ──────────────────────────────────────────────
@@ -283,15 +303,17 @@ if targetRemote then
             return oldNamecall(self, ...)
         end
 
-        -- Nếu tắt Auto Black Flash → chạy skill bình thường
+        -- Tắt Auto → skill bình thường
         if not AutoBlackFlash then
             return oldNamecall(self, ...)
         end
 
+        -- Đang trong quá trình retry fire → cho qua
         if isRetrying then
             return oldNamecall(self, ...)
         end
 
+        -- Đang cooling → chặn
         if isCooling then
             return oldNamecall(self, ...)
         end
@@ -300,12 +322,32 @@ if targetRemote then
 
         local result = oldNamecall(self, ...)
         local args = {...}
+
         local target = findNearestTarget()
         local targetRoot = target and target:FindFirstChild("HumanoidRootPart")
 
+        -- Dash ngay lập tức (round 1)
+        task.spawn(function()
+            if targetRoot and targetRoot.Parent and isLocalAlive() then
+                performCurvedDash(targetRoot)
+            end
+        end)
+
+        -- Kiểm tra sau FireDelay
         task.delay(CONFIG.FireDelay, function()
-            if targetRoot and targetRoot.Parent and not isTargetFacingAway(targetRoot) then
-                -- Địch quay mặt → cancel + retry
+            -- Điều kiện bắt buộc trước khi xử lý tiếp
+            if not isLocalAlive() then
+                isCooling = false
+                return
+            end
+
+            if not targetRoot or not targetRoot.Parent or not isAliveModel(targetRoot.Parent) then
+                isCooling = false
+                return
+            end
+
+            -- === THẤT BẠI (địch không quay lưng) → CANCEL + RETRY ===
+            if not isTargetFacingAway(targetRoot) then
                 if returnSkillRemote then
                     pcall(function()
                         returnSkillRemote:FireServer()
@@ -315,21 +357,36 @@ if targetRemote then
                 task.spawn(function()
                     task.wait(CONFIG.RetryDelay)
 
-                    if not targetRoot.Parent or not isAliveModel(targetRoot.Parent) then
-                        task.defer(function() isCooling = false end)
+                    -- Kiểm tra lại sau khi chờ RetryDelay
+                    if not isLocalAlive() then
+                        isCooling = false
                         return
                     end
 
-                    performCurvedDash(targetRoot)
+                    if not targetRoot or not targetRoot.Parent or not isAliveModel(targetRoot.Parent) then
+                        isCooling = false
+                        return
+                    end
+
+                    -- Thực hiện dash lại
+                    local dashSuccess = performCurvedDash(targetRoot)
+
+                    -- Chờ một chút để orientation ổn định sau dash
+                    task.wait(0.05)
+
+                    -- Kiểm tra lại sau dash
+                    if not isLocalAlive() or not targetRoot.Parent or not isAliveModel(targetRoot.Parent) then
+                        isCooling = false
+                        return
+                    end
 
                     local shouldRetryFire = (_G.retryfire ~= nil) and _G.retryfire or CONFIG.RetryFire
 
-                    if not isTargetFacingAway(targetRoot) then
-                        -- Retry cũng fail
-                    elseif not shouldRetryFire then
-                        -- Thành công nhưng không fire lại
-                    else
-                        -- Thành công → fire lại skill
+                    -- Chỉ fire lại khi:
+                    -- 1. Dash thành công
+                    -- 2. Địch đang quay lưng
+                    -- 3. RetryFire được bật
+                    if dashSuccess and isTargetFacingAway(targetRoot) and shouldRetryFire then
                         isRetrying = true
                         pcall(function()
                             targetRemote:FireServer(table.unpack(args))
@@ -341,21 +398,15 @@ if targetRemote then
                         isRetrying = false
                     end
 
-                    task.defer(function() isCooling = false end)
+                    isCooling = false
                 end)
             else
-                -- Round 1 thành công
+                -- === THÀNH CÔNG (địch quay lưng) → fire xác nhận ===
                 pcall(function()
                     targetRemote:FireServer(table.unpack(args))
                 end)
-                task.defer(function() isCooling = false end)
+                isCooling = false
             end
-        end)
-
-        -- Dash round 1
-        task.spawn(function()
-            if not targetRoot or not targetRoot.Parent then return end
-            performCurvedDash(targetRoot)
         end)
 
         return result
