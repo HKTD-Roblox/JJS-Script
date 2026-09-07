@@ -23,9 +23,9 @@ local function Notify(title, text, duration)
 end
 
 local PredictionFactor = 0.08
-local SafetyDistance = 2.4
+local SafetyDistance = 3.0
 local SmoothSpeed = 1.0
-local TouchDistance = 3.2
+local TouchDistance = 4.8
 local TouchWait = 0.12
 local AttemptsLimit = 12
 local AttemptsDelay = 0.25
@@ -37,6 +37,7 @@ local KillEnabled = false
 local KillConnection = nil
 local InvisibleEnabled = false
 local InvisibleConnection = nil
+local SavedProps = {}
 
 local function GetHRP(char)
     return char and char:FindFirstChild("HumanoidRootPart")
@@ -162,7 +163,7 @@ local function SetKillEveryone(state)
 
         BypassReady = false
         KillEnabled = true
-        Notify("Kill Everyone", "Enabled", 2)
+        Notify("Kill Everyone", "Enabled (-1 Bypass)", 2)
 
         local targetIndex = 1
         local waitingTouch = false
@@ -242,54 +243,61 @@ end
 
 local function ApplyInvisible(char)
     if not char then return end
+    table.clear(SavedProps)
+
     for _, obj in ipairs(char:GetDescendants()) do
         if obj:IsA("BasePart") then
-            obj.Transparency = 1
-            obj.LocalTransparencyModifier = -0.5
-        elseif obj:IsA("Decal") or obj:IsA("Texture") then
-            obj.Transparency = 1
-        elseif obj:IsA("Accessory") then
-            local handle = obj:FindFirstChild("Handle")
-            if handle and handle:IsA("BasePart") then
-                handle.Transparency = 1
-                handle.LocalTransparencyModifier = -0.5
+            SavedProps[obj] = {
+                Transparency = obj.Transparency,
+                LocalTransparencyModifier = obj.LocalTransparencyModifier
+            }
+            if obj.Name == "HumanoidRootPart" then
+                obj.Transparency = 1
+                obj.LocalTransparencyModifier = 0
+            else
+                obj.Transparency = 1
+                obj.LocalTransparencyModifier = -0.7
             end
+        elseif obj:IsA("Decal") or obj:IsA("Texture") then
+            SavedProps[obj] = {
+                Transparency = obj.Transparency
+            }
+            obj.Transparency = 1
         end
     end
-    local shirt = char:FindFirstChildOfClass("Shirt")
-    local pants = char:FindFirstChildOfClass("Pants")
-    local tshirt = char:FindFirstChildOfClass("ShirtGraphic")
-    if shirt then shirt.ShirtTemplate = "" end
-    if pants then pants.PantsTemplate = "" end
-    if tshirt then tshirt.Graphic = "" end
 end
 
 local function RemoveInvisible(char)
     if not char then return end
-    for _, obj in ipairs(char:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
-            obj.Transparency = 0
-            obj.LocalTransparencyModifier = 0
-        elseif obj:IsA("BasePart") and obj.Name == "HumanoidRootPart" then
-            obj.Transparency = 1
-            obj.LocalTransparencyModifier = 0
-        elseif obj:IsA("Decal") or obj:IsA("Texture") then
-            obj.Transparency = 0
+
+    for obj, props in pairs(SavedProps) do
+        if obj and obj.Parent then
+            if props.Transparency ~= nil then
+                obj.Transparency = props.Transparency
+            end
+            if props.LocalTransparencyModifier ~= nil then
+                obj.LocalTransparencyModifier = props.LocalTransparencyModifier
+            end
         end
     end
+
+    table.clear(SavedProps)
 end
 
 local function SetInvisible(state)
     InvisibleEnabled = state
+
     if InvisibleConnection then
         InvisibleConnection:Disconnect()
         InvisibleConnection = nil
     end
+
     local char = LocalPlayer.Character
+
     if state then
         ApplyInvisible(char)
         InvisibleConnection = LocalPlayer.CharacterAdded:Connect(function(newChar)
-            task.wait(0.3)
+            task.wait(0.35)
             if InvisibleEnabled then
                 ApplyInvisible(newChar)
             end
