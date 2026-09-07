@@ -413,8 +413,6 @@ if targetRemote then
 
         return result
     end)
-else
-    Notify("Auto Black Flash", "Error: Remote not found!", 3)
 end
 
 -- ──────────────────────────────────────────────
