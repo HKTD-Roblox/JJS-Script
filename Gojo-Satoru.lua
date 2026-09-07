@@ -6,8 +6,7 @@ local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 
-local JJS_PLACE_ID = 9391468976
-if game.PlaceId ~= JJS_PLACE_ID then
+if game.PlaceId ~= 9391468976 then
     LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
     return
 end
@@ -35,9 +34,6 @@ local BypassReady = false
 local BypassRunning = false
 local KillEnabled = false
 local KillConnection = nil
-local InvisibleEnabled = false
-local InvisibleConnection = nil
-local SavedProps = {}
 
 local function GetHRP(char)
     return char and char:FindFirstChild("HumanoidRootPart")
@@ -241,74 +237,6 @@ local function SetKillEveryone(state)
     end
 end
 
-local function ApplyInvisible(char)
-    if not char then return end
-    table.clear(SavedProps)
-
-    for _, obj in ipairs(char:GetDescendants()) do
-        if obj:IsA("BasePart") then
-            SavedProps[obj] = {
-                Transparency = obj.Transparency,
-                LocalTransparencyModifier = obj.LocalTransparencyModifier
-            }
-            if obj.Name == "HumanoidRootPart" then
-                obj.Transparency = 1
-                obj.LocalTransparencyModifier = 0
-            else
-                obj.Transparency = 1
-                obj.LocalTransparencyModifier = -0.7
-            end
-        elseif obj:IsA("Decal") or obj:IsA("Texture") then
-            SavedProps[obj] = {
-                Transparency = obj.Transparency
-            }
-            obj.Transparency = 1
-        end
-    end
-end
-
-local function RemoveInvisible(char)
-    if not char then return end
-
-    for obj, props in pairs(SavedProps) do
-        if obj and obj.Parent then
-            if props.Transparency ~= nil then
-                obj.Transparency = props.Transparency
-            end
-            if props.LocalTransparencyModifier ~= nil then
-                obj.LocalTransparencyModifier = props.LocalTransparencyModifier
-            end
-        end
-    end
-
-    table.clear(SavedProps)
-end
-
-local function SetInvisible(state)
-    InvisibleEnabled = state
-
-    if InvisibleConnection then
-        InvisibleConnection:Disconnect()
-        InvisibleConnection = nil
-    end
-
-    local char = LocalPlayer.Character
-
-    if state then
-        ApplyInvisible(char)
-        InvisibleConnection = LocalPlayer.CharacterAdded:Connect(function(newChar)
-            task.wait(0.35)
-            if InvisibleEnabled then
-                ApplyInvisible(newChar)
-            end
-        end)
-        Notify("Invisible", "Enabled", 2)
-    else
-        RemoveInvisible(char)
-        Notify("Invisible", "Disabled", 2)
-    end
-end
-
 Window:AddToggle({
     text = "Kill Everyone",
     flag = "KillEveryone",
@@ -332,14 +260,6 @@ Window:AddToggle({
         if value then
             RunBypassAntiCheat()
         end
-    end
-})
-
-Window:AddToggle({
-    text = "Invisible",
-    flag = "Invisible",
-    callback = function(value)
-        SetInvisible(value)
     end
 })
 
