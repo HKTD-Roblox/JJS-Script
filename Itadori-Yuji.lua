@@ -36,6 +36,7 @@ local CONFIG = {
     BehindOffset           = 5.5,
     AlreadyBehindTolerance = 3.5,
     FireDelay              = 0.37,
+    SecondFireDelay        = 0.3,   -- thời gian chờ trước khi fire lần 2
     DashSpeed              = 79,
     ArcSegments            = 5,
     SideWidth              = 0.65,
@@ -337,23 +338,31 @@ if targetRemote then
         local result = oldNamecall(self, ...)
         local args = {...}
 
-        -- 2. Fire lần 2 ngay lập tức (tổng cộng 2 lần)
-        pcall(function()
-            targetRemote:FireServer(table.unpack(args))
-        end)
-
         local target = findNearestTarget()
         local targetRoot = target and target:FindFirstChild("HumanoidRootPart")
 
-        -- 3. Sau khi đã fire 2 lần → mới bắt đầu dash
+        -- 2. Chờ 0.3 giây rồi mới Fire lần 2
         task.spawn(function()
+            task.wait(CONFIG.SecondFireDelay)
+
+            if not isLocalAlive() then
+                isCooling = false
+                return
+            end
+
+            -- Fire lần 2
+            pcall(function()
+                targetRemote:FireServer(table.unpack(args))
+            end)
+
+            -- 3. Sau khi fire lần 2 → mới bắt đầu dash
             if targetRoot and targetRoot.Parent and isLocalAlive() then
                 performCurvedDash(targetRoot)
             end
         end)
 
         -- 4. Kiểm tra sau FireDelay (giữ nguyên logic retry)
-        task.delay(CONFIG.FireDelay, function()
+        task.delay(CONFIG.FireDelay + CONFIG.SecondFireDelay, function()
             if not isLocalAlive() then
                 isCooling = false
                 return
@@ -441,12 +450,11 @@ Window:AddToggle({
 })
 
 Window:AddToggle({
-    text = "Auto Counter [OFF]",
+    text = "Auto Counter [Beta]",
     flag = "AutoCounter",
     callback = function(value)
         if value then
             Notify("Auto Counter", "This feature is coming soon!", 3)
-            -- Tự động tắt lại
             task.defer(function()
                 library.flags.AutoCounter = false
             end)
