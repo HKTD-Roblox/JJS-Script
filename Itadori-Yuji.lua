@@ -455,9 +455,6 @@ Window:AddToggle({
     callback = function(value)
         if value then
             Notify("Auto Counter", "This feature is coming soon!", 3)
-            task.defer(function()
-                library.flags.AutoCounter = false
-            end)
         end
     end
 })
