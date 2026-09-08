@@ -159,7 +159,7 @@ local function SetKillEveryone(state)
 
         BypassReady = false
         KillEnabled = true
-        Notify("Kill Everyone", "Enabled (-1 Bypass)", 2)
+        Notify("Kill Everyone", "Enabled", 2)
 
         local targetIndex = 1
         local waitingTouch = false
