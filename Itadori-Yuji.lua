@@ -333,19 +333,26 @@ if targetRemote then
 
         isCooling = true
 
+        -- 1. Fire lần 1 (do người chơi ấn)
         local result = oldNamecall(self, ...)
         local args = {...}
+
+        -- 2. Fire lần 2 ngay lập tức (tổng cộng 2 lần)
+        pcall(function()
+            targetRemote:FireServer(table.unpack(args))
+        end)
 
         local target = findNearestTarget()
         local targetRoot = target and target:FindFirstChild("HumanoidRootPart")
 
-        -- Dash round 1
+        -- 3. Sau khi đã fire 2 lần → mới bắt đầu dash
         task.spawn(function()
             if targetRoot and targetRoot.Parent and isLocalAlive() then
                 performCurvedDash(targetRoot)
             end
         end)
 
+        -- 4. Kiểm tra sau FireDelay (giữ nguyên logic retry)
         task.delay(CONFIG.FireDelay, function()
             if not isLocalAlive() then
                 isCooling = false
@@ -404,9 +411,6 @@ if targetRemote then
                 end)
             else
                 -- THÀNH CÔNG
-                pcall(function()
-                    targetRemote:FireServer(table.unpack(args))
-                end)
                 isCooling = false
             end
         end)
