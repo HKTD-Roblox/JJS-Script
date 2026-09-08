@@ -441,10 +441,16 @@ Window:AddToggle({
 })
 
 Window:AddToggle({
-    text = "Auto Counter [Beta]",
+    text = "Auto Counter [OFF]",
     flag = "AutoCounter",
     callback = function(value)
-        -- chưa làm
+        if value then
+            Notify("Auto Counter", "This feature is coming soon!", 3)
+            -- Tự động tắt lại
+            task.defer(function()
+                library.flags.AutoCounter = false
+            end)
+        end
     end
 })
 
