@@ -290,8 +290,8 @@ end
 
 -- Hiện thông báo native
 StarterGui:SetCore("SendNotification", {
-    Title = "Fly Script",
-    Text = "Do you want to enable the Fly script?",
+    Title = "Super Fly",
+    Text = "Do you want to enable the Super Fly script?",
     Duration = 999999,
     Callback = Bindable,
     Button1 = "Yes",
