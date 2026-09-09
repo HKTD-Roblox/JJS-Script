@@ -137,14 +137,12 @@ local function findNearestTarget()
         end
     end
 
-    -- Players
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
             checkModel(player.Character)
         end
     end
 
-    -- Chỉ quét Model cấp 1 trong workspace (tránh GetDescendants gây lag)
     for _, obj in ipairs(workspace:GetChildren()) do
         if obj:IsA("Model") then
             checkModel(obj)
@@ -341,7 +339,14 @@ if targetRemote then
         local target = findNearestTarget()
         local targetRoot = target and target:FindFirstChild("HumanoidRootPart")
 
-        -- 2. Chờ 0.3 giây rồi mới Fire lần 2
+        -- 2. Dash ngay lập tức (song song với việc chờ fire lần 2)
+        task.spawn(function()
+            if targetRoot and targetRoot.Parent and isLocalAlive() then
+                performCurvedDash(targetRoot)
+            end
+        end)
+
+        -- 3. Chờ 0.3s rồi Fire lần 2
         task.spawn(function()
             task.wait(CONFIG.SecondFireDelay)
 
@@ -350,18 +355,12 @@ if targetRemote then
                 return
             end
 
-            -- Fire lần 2
             pcall(function()
                 targetRemote:FireServer(table.unpack(args))
             end)
-
-            -- 3. Sau khi fire lần 2 → mới bắt đầu dash
-            if targetRoot and targetRoot.Parent and isLocalAlive() then
-                performCurvedDash(targetRoot)
-            end
         end)
 
-        -- 4. Kiểm tra sau FireDelay (giữ nguyên logic retry)
+        -- 4. Kiểm tra sau FireDelay (logic retry)
         task.delay(CONFIG.FireDelay + CONFIG.SecondFireDelay, function()
             if not isLocalAlive() then
                 isCooling = false
@@ -455,6 +454,9 @@ Window:AddToggle({
     callback = function(value)
         if value then
             Notify("Auto Counter", "This feature is coming soon!", 3)
+            task.defer(function()
+                library.flags.AutoCounter = false
+            end)
         end
     end
 })
