@@ -2,10 +2,8 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- ──────────────────────────────────────────────
@@ -21,8 +19,15 @@ Bindable.OnInvoke = function(answer)
     local kills = 0
     local money = 0
     local currentTarget = nil
-    local farmConnection = nil
-    local m1Connection = nil
+
+    -- Remote M1
+    local m1Remote = ReplicatedStorage
+        :WaitForChild("Knit")
+        :WaitForChild("Knit")
+        :WaitForChild("Services")
+        :WaitForChild("MeleeService")
+        :WaitForChild("RE")
+        :WaitForChild("Activated")
 
     -- ──────────────────────────────────────────────
     --  FULL BLACK SCREEN UI
@@ -36,7 +41,6 @@ Bindable.OnInvoke = function(answer)
 
     local BlackFrame = Instance.new("Frame")
     BlackFrame.Size = UDim2.new(1, 0, 1, 0)
-    BlackFrame.Position = UDim2.new(0, 0, 0, 0)
     BlackFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     BlackFrame.BorderSizePixel = 0
     BlackFrame.Parent = ScreenGui
@@ -86,34 +90,30 @@ Bindable.OnInvoke = function(answer)
     -- ──────────────────────────────────────────────
     local function makeInvisible(char)
         if not char then return end
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Transparency = 1
-                part.CanCollide = false
-            elseif part:IsA("Decal") or part:IsA("Texture") then
-                part.Transparency = 1
-            elseif part:IsA("ParticleEmitter") or part:IsA("Trail") or part:IsA("Beam") then
-                part.Enabled = false
-            elseif part:IsA("Accessory") then
-                local handle = part:FindFirstChild("Handle")
-                if handle then
-                    handle.Transparency = 1
-                end
+        for _, v in ipairs(char:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Transparency = 1
+                v.CanCollide = false
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then
+                v.Enabled = false
+            elseif v:IsA("Accessory") then
+                local handle = v:FindFirstChild("Handle")
+                if handle then handle.Transparency = 1 end
             end
         end
-
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
         end
     end
 
     if LocalPlayer.Character then
         makeInvisible(LocalPlayer.Character)
     end
-
     LocalPlayer.CharacterAdded:Connect(function(char)
-        task.wait(0.5)
+        task.wait(0.4)
         makeInvisible(char)
     end)
 
@@ -123,7 +123,6 @@ Bindable.OnInvoke = function(answer)
     local function getLowestHPTarget()
         local lowest = nil
         local lowestHP = math.huge
-
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character then
                 local hum = plr.Character:FindFirstChildOfClass("Humanoid")
@@ -138,143 +137,75 @@ Bindable.OnInvoke = function(answer)
     end
 
     -- ──────────────────────────────────────────────
-    --  M1 SPAM (Animation + Remote attempt)
+    --  MAIN LOOP
     -- ──────────────────────────────────────────────
-    local function getM1Remote()
-        local ok, remote = pcall(function()
-            return ReplicatedStorage:WaitForChild("Knit", 2)
-                :WaitForChild("Services", 2)
-                :WaitForChild("CombatService", 2)
-                :WaitForChild("RE", 2)
-                :WaitForChild("M1", 2)
-        end)
-        if ok and remote then return remote end
+    local lastM1 = 0
 
-        -- fallback common paths
-        local paths = {
-            {"Knit", "Services", "CombatService", "RE", "LeftClick"},
-            {"Knit", "Services", "CombatService", "RE", "Punch"},
-            {"Remotes", "M1"},
-        }
-        for _, path in ipairs(paths) do
-            local node = ReplicatedStorage
-            local found = true
-            for _, name in ipairs(path) do
-                node = node:FindFirstChild(name)
-                if not node then found = false break end
-            end
-            if found then return node end
-        end
-        return nil
-    end
-
-    local m1Remote = getM1Remote()
-
-    local function spamM1()
-        -- Play punch animation
+    RunService.Heartbeat:Connect(function()
         local char = LocalPlayer.Character
-        if char then
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                local animator = humanoid:FindFirstChildOfClass("Animator")
-                if animator then
-                    local anim = Instance.new("Animation")
-                    anim.AnimationId = "rbxassetid://100962226150441" -- attack anim from previous scripts
-                    local track = animator:LoadAnimation(anim)
-                    track.Priority = Enum.AnimationPriority.Action
-                    track:Play()
-                    task.delay(0.4, function()
-                        if track then track:Stop() end
-                    end)
-                end
+        local myRoot = char and char:FindFirstChild("HumanoidRootPart")
+        local myHum = char and char:FindFirstChildOfClass("Humanoid")
+
+        if not myRoot or not myHum or myHum.Health <= 0 then
+            StatusLabel.Text = "Status: Waiting for character..."
+            return
+        end
+
+        -- Check target death
+        if currentTarget then
+            local tChar = currentTarget.Character
+            local tHum = tChar and tChar:FindFirstChildOfClass("Humanoid")
+            local tRoot = tChar and tChar:FindFirstChild("HumanoidRootPart")
+
+            if not tHum or tHum.Health <= 0 or not tRoot then
+                kills += 1
+                money += 5
+                KillsLabel.Text = "Kills: " .. kills
+                MoneyLabel.Text = "Money: " .. money .. "$"
+                currentTarget = nil
+                StatusLabel.Text = "Status: Target eliminated. Searching..."
             end
         end
 
-        -- Fire remote if found
-        if m1Remote then
+        -- Find new target
+        if not currentTarget then
+            currentTarget = getLowestHPTarget()
+            if currentTarget then
+                StatusLabel.Text = "Status: Farming " .. currentTarget.Name
+            else
+                StatusLabel.Text = "Status: No targets found..."
+                return
+            end
+        end
+
+        local tRoot = currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart")
+        local tHum = currentTarget.Character and currentTarget.Character:FindFirstChildOfClass("Humanoid")
+
+        if not tRoot or not tHum or tHum.Health <= 0 then
+            currentTarget = nil
+            return
+        end
+
+        -- Teleport behind 1.5 studs + face target + follow jump
+        local behindPos = (tRoot.CFrame * CFrame.new(0, 0, 1.5)).Position
+        myRoot.CFrame = CFrame.lookAt(behindPos, tRoot.Position)
+        myRoot.AssemblyLinearVelocity = Vector3.zero
+        myRoot.AssemblyAngularVelocity = Vector3.zero
+
+        -- Spam M1
+        if tick() - lastM1 >= 0.22 then
+            lastM1 = tick()
             pcall(function()
                 m1Remote:FireServer()
             end)
         end
-    end
-
-    -- ──────────────────────────────────────────────
-    --  MAIN FARM LOOP
-    -- ──────────────────────────────────────────────
-    local function startFarm()
-        farmConnection = RunService.Heartbeat:Connect(function()
-            local char = LocalPlayer.Character
-            local myRoot = char and char:FindFirstChild("HumanoidRootPart")
-            local myHum = char and char:FindFirstChildOfClass("Humanoid")
-
-            if not myRoot or not myHum or myHum.Health <= 0 then
-                StatusLabel.Text = "Status: Waiting for character..."
-                return
-            end
-
-            -- Check current target still valid
-            if currentTarget then
-                local tChar = currentTarget.Character
-                local tHum = tChar and tChar:FindFirstChildOfClass("Humanoid")
-                local tRoot = tChar and tChar:FindFirstChild("HumanoidRootPart")
-
-                if not tHum or tHum.Health <= 0 or not tRoot then
-                    -- Target died
-                    kills = kills + 1
-                    money = money + 5
-                    KillsLabel.Text = "Kills: " .. kills
-                    MoneyLabel.Text = "Money: " .. money .. "$"
-                    currentTarget = nil
-                    StatusLabel.Text = "Status: Target eliminated. Searching..."
-                end
-            end
-
-            -- Find new target if needed
-            if not currentTarget then
-                currentTarget = getLowestHPTarget()
-                if currentTarget then
-                    StatusLabel.Text = "Status: Farming " .. currentTarget.Name
-                else
-                    StatusLabel.Text = "Status: No targets found..."
-                    return
-                end
-            end
-
-            local tChar = currentTarget.Character
-            local tRoot = tChar and tChar:FindFirstChild("HumanoidRootPart")
-            local tHum = tChar and tChar:FindFirstChildOfClass("Humanoid")
-
-            if not tRoot or not tHum or tHum.Health <= 0 then
-                currentTarget = nil
-                return
-            end
-
-            -- Teleport behind target (1.5 studs) + always face them + follow jump
-            local behindCF = tRoot.CFrame * CFrame.new(0, 0, 1.5)
-            myRoot.CFrame = CFrame.lookAt(behindCF.Position, tRoot.Position)
-
-            -- Keep character stiff (no velocity)
-            myRoot.AssemblyLinearVelocity = Vector3.zero
-            myRoot.AssemblyAngularVelocity = Vector3.zero
-        end)
-
-        -- M1 spam loop
-        m1Connection = RunService.Heartbeat:Connect(function()
-            if currentTarget then
-                spamM1()
-                task.wait(0.25) -- spam speed
-            end
-        end)
-    end
-
-    startFarm()
+    end)
 
     -- ====================== END AUTO FARM ======================
 end
 
--- Hiện thông báo
 StarterGui:SetCore("SendNotification", {
-    Title = "JJS Auto-Farm",
+    Title = "JJS Auto Farm",
     Text = "Do you want to enable the JJS Auto-Farm script?",
     Duration = 999999,
     Callback = Bindable,
