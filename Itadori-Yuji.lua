@@ -50,7 +50,6 @@ local CONFIG = {
     RetryDelay             = 0.04,
     RetryFire              = true,
     CloseRange             = 5,
-    CounterKey             = Enum.KeyCode.Four,
 }
 
 if _G.retryfire ~= nil then
@@ -344,7 +343,7 @@ RunService.Heartbeat:Connect(function()
             local spawnPosition = Vector3.new(part.Position.X, rootPart.Position.Y, part.Position.Z)
             rootPart.CFrame = CFrame.new(rootPart.Position, spawnPosition)
 
-            task.spawn(simulateKeyPress, CONFIG.CounterKey)
+            task.spawn(simulateKeyPress, Enum.KeyCode.Four)
 
             task.wait(0.5)
             break
@@ -493,7 +492,7 @@ Window:AddToggle({
 })
 
 Window:AddToggle({
-    text = "Auto Counter [Beta]",
+    text = "Auto Counter",
     flag = "AutoCounter",
     callback = function(value)
         AutoCounter = value
