@@ -9,6 +9,11 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
+if game.PlaceId ~= 9391468976 then
+    LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
+    return
+end
+
 -- ──────────────────────────────────────────────
 --  NATIVE ROBLOX NOTIFICATION WITH YES / NO
 -- ──────────────────────────────────────────────
@@ -279,7 +284,7 @@ end
 
 -- Hiện thông báo native
 StarterGui:SetCore("SendNotification", {
-    Title = "Fly Script",
+    Title = "Super Fly",
     Text = "Do you want to enable the  Super Fly script?",
     Duration = 999999,
     Callback = Bindable,
