@@ -9,11 +9,6 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
-if game.PlaceId ~= 9391468976 then
-    LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
-    return
-end
-
 -- ──────────────────────────────────────────────
 --  NATIVE ROBLOX NOTIFICATION WITH YES / NO
 -- ──────────────────────────────────────────────
@@ -27,6 +22,8 @@ Bindable.OnInvoke = function(answer)
     local flyConnection = nil
     local bodyVelocity = nil
     local bodyGyro = nil
+    
+    local originalWalkSpeed = 16
     
     -- Animation Tracks
     local idleAnimTrack = nil
@@ -155,7 +152,9 @@ Bindable.OnInvoke = function(answer)
             local humanoid = character:FindFirstChildOfClass("Humanoid")
             if humanoid then
                 humanoid.PlatformStand = false
+                humanoid.WalkSpeed = originalWalkSpeed
                 humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+                humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
             end
         end
     end
@@ -169,22 +168,28 @@ Bindable.OnInvoke = function(answer)
         if not root or not humanoid or humanoid.Health <= 0 then return end
 
         isFlying = true
+        originalWalkSpeed = humanoid.WalkSpeed
+        
         if ButtonStroke then
             ButtonStroke.Color = Color3.fromRGB(80, 255, 80)
         end
 
         setupAnimations(character)
 
-        -- Khóa nhảy & dọn dẹp vận tốc rơi
+        -- Khóa trạng thái chạy mặt đất & Vô hiệu hóa nhảy
+        humanoid.PlatformStand = true
+        humanoid.WalkSpeed = 0
         humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+        
+        -- Reset vận tốc hiện tại
         root.AssemblyLinearVelocity = Vector3.zero
 
-        -- Raycast kiềm tra khoảng cách mặt đất ban đầu
+        -- Raycast kiểm tra khoảng cách đất để nâng lên 4 studs
         local raycastParams = RaycastParams.new()
         raycastParams.FilterDescendantsInstances = {character}
         raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 
-        local groundRay = workspace:Raycast(root.Position, Vector3.new(0, -100, 0), raycastParams)
+        local groundRay = workspace:Raycast(root.Position, Vector3.new(0, -50, 0), raycastParams)
         local targetY = root.Position.Y + 4
 
         if groundRay then
@@ -194,24 +199,24 @@ Bindable.OnInvoke = function(answer)
             end
         end
 
-        -- Tạo BodyVelocity & BodyGyro kiểm soát bay
+        -- Dịch chuyển nhẹ lên không trung ngay lập tức
+        root.CFrame = CFrame.new(root.Position.X, targetY, root.Position.Z) * root.CFrame.Rotation
+
+        -- Lực nâng không trọng lực
         bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         bodyVelocity.Velocity = Vector3.zero
         bodyVelocity.Parent = root
 
         bodyGyro = Instance.new("BodyGyro")
-        bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-        bodyGyro.P = 10000
-        bodyGyro.CFrame = root.CFrame
+        bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyGyro.P = 20000
+        bodyGyro.CFrame = Camera.CFrame
         bodyGyro.Parent = root
-
-        -- Đưa nhân vật lên độ cao 4 studs mượt mà
-        root.CFrame = CFrame.new(root.Position.X, targetY, root.Position.Z) * root.CFrame.Rotation
 
         if idleAnimTrack then idleAnimTrack:Play() end
 
-        -- Vòng lặp cập nhật trạng thái bay mỗi Frame
+        -- Vòng lặp RenderStepped
         flyConnection = RunService.RenderStepped:Connect(function()
             if not isFlying or not character or not character.Parent or humanoid.Health <= 0 then
                 stopFly()
@@ -221,30 +226,32 @@ Bindable.OnInvoke = function(answer)
             local moveDir = humanoid.MoveDirection
             bodyGyro.CFrame = Camera.CFrame
 
-            -- 1. Kiểm tra va chạm (Đập mặt/thân vào tường hoặc vật cản) -> Tự tắt Fly
+            -- 1. Kiểm tra va chạm tường/vật cản phía trước -> Tự tắt Fly
             local wallCheck = workspace:Raycast(root.Position, root.CFrame.LookVector * 2.5, raycastParams)
             if wallCheck and wallCheck.Instance and wallCheck.Instance.CanCollide then
                 stopFly()
                 return
             end
 
-            -- 2. Tự động nâng nhân vật lên 4 studs nếu lỡ hạ quá sát đất khi đứng yên
+            -- 2. Tự động đẩy lên cao 4 studs nếu tụt xuống quá sát đất lúc đứng yên
             local currentGroundRay = workspace:Raycast(root.Position, Vector3.new(0, -10, 0), raycastParams)
-            if currentGroundRay then
-                local currentDist = root.Position.Y - currentGroundRay.Position.Y
-                if currentDist < 4 and moveDir.Magnitude == 0 then
-                    root.CFrame = CFrame.new(root.Position.X, currentGroundRay.Position.Y + 4, root.Position.Z) * root.CFrame.Rotation
-                end
+            if currentGroundRay and (root.Position.Y - currentGroundRay.Position.Y) < 4 and moveDir.Magnitude == 0 then
+                root.CFrame = CFrame.new(root.Position.X, currentGroundRay.Position.Y + 4, root.Position.Z) * root.CFrame.Rotation
             end
 
-            -- 3. Xử lý di chuyển & Chuyển đổi Animation
+            -- 3. Xử lý di chuyển không trung tốc độ 100
             if moveDir.Magnitude > 0 then
-                bodyVelocity.Velocity = Camera.CFrame:VectorToWorldSpace(
-                    CFrame.new(Vector3.zero, Camera.CFrame.LookVector):VectorToObjectSpace(moveDir)
-                ) * 100
+                -- Tính toán hướng di chuyển dựa trên góc quay Camera
+                local camCFrame = Camera.CFrame
+                local flyDir = (camCFrame.RightVector * moveDir.X) + (camCFrame.LookVector * -moveDir.Z)
+                
+                bodyVelocity.Velocity = flyDir.Unit * 100
 
                 if idleAnimTrack and idleAnimTrack.IsPlaying then idleAnimTrack:Stop() end
-                if moveAnimTrack and not moveAnimTrack.IsPlaying then moveAnimTrack:Play() end
+                if moveAnimTrack and not moveAnimTrack.IsPlaying then 
+                    moveAnimTrack:Play()
+                    moveAnimTrack:AdjustSpeed(1) -- Giữ nguyên tốc độ gốc của Animation
+                end
             else
                 bodyVelocity.Velocity = Vector3.zero
 
@@ -274,7 +281,6 @@ Bindable.OnInvoke = function(answer)
         end)
     end
 
-    -- Tự động reset khi nhân vật chết / respawn
     LocalPlayer.CharacterAdded:Connect(function()
         stopFly()
     end)
@@ -284,8 +290,8 @@ end
 
 -- Hiện thông báo native
 StarterGui:SetCore("SendNotification", {
-    Title = "Super Fly",
-    Text = "Do you want to enable the  Super Fly script?",
+    Title = "Fly Script",
+    Text = "Do you want to enable the Fly script?",
     Duration = 999999,
     Callback = Bindable,
     Button1 = "Yes",
