@@ -430,6 +430,20 @@ end
 -- ──────────────────────────────────────────────
 --  UI
 -- ──────────────────────────────────────────────
+
+Window:AddToggle({
+    text = "Auto Counter & Block",
+    flag = "AutoCounter",
+    callback = function(value)
+        if value then
+            Notify("Auto Counter & Block", "This feature is coming soon!", 3)
+            task.defer(function()
+                library.flags.AutoCounter = false
+            end)
+        end
+    end
+})
+
 Window:AddToggle({
     text = "Auto Black Flash",
     flag = "AutoBlackFlash",
@@ -444,19 +458,6 @@ Window:AddToggle({
             end
         else
             Notify("Auto Black Flash", "Disabled", 2)
-        end
-    end
-})
-
-Window:AddToggle({
-    text = "Auto Counter [Beta]",
-    flag = "AutoCounter",
-    callback = function(value)
-        if value then
-            Notify("Auto Counter", "This feature is coming soon!", 3)
-            task.defer(function()
-                library.flags.AutoCounter = false
-            end)
         end
     end
 })
