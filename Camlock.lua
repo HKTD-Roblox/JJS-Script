@@ -90,13 +90,12 @@ Bindable.OnInvoke = function(answer)
         Button = Instance.new("ImageButton")
         Button.Name = "CamLockButton"
         Button.Size = UDim2.new(0, 56, 0, 56)
-        -- Vị trí: phía trên nút chiêu đặc biệt, bên trái nút Block (góc phải dưới)
         Button.Position = UDim2.new(1, -145, 1, -210)
         Button.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         Button.BackgroundTransparency = 0.25
         Button.BorderSizePixel = 0
-        Button.Image = "rbxassetid://6031094678" -- crosshair icon
-        Button.ImageColor3 = Color3.fromRGB(230, 230, 230)
+        Button.Image = "rbxassetid://13961481889" -- Icon tâm ngắm đúng như ảnh
+        Button.ImageColor3 = Color3.fromRGB(240, 240, 240)
         Button.ScaleType = Enum.ScaleType.Fit
         Button.Parent = ScreenGui
 
@@ -110,7 +109,7 @@ Bindable.OnInvoke = function(answer)
         ButtonStroke.Transparency = 0.35
         ButtonStroke.Parent = Button
 
-        -- Drag (giữ nhẹ + kéo là được)
+        -- Drag mượt (giữ nhẹ + kéo là được)
         Button.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
                 holdStart = tick()
@@ -123,7 +122,7 @@ Bindable.OnInvoke = function(answer)
         Button.InputChanged:Connect(function(input)
             if (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) and dragStartPos then
                 local delta = Vector2.new(input.Position.X, input.Position.Y) - dragStartPos
-                if delta.Magnitude > 8 then -- chỉ cần kéo một chút là được
+                if delta.Magnitude > 8 then
                     isDragging = true
                     Button.Position = UDim2.new(
                         buttonStartPos.X.Scale,
