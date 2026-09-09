@@ -492,7 +492,7 @@ Window:AddToggle({
 })
 
 Window:AddToggle({
-    text = "Auto Counter",
+    text = "Auto Counter [Beta]",
     flag = "AutoCounter",
     callback = function(value)
         AutoCounter = value
