@@ -4,11 +4,13 @@ local Window = library:CreateWindow("Itadori Yuji")
 -- ──────────────────────────────────────────────
 --  SERVICES
 -- ──────────────────────────────────────────────
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService      = game:GetService("TweenService")
-local StarterGui        = game:GetService("StarterGui")
-local Players           = game:GetService("Players")
-local LocalPlayer       = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local ReplicatedStorage    = game:GetService("ReplicatedStorage")
+local TweenService        = game:GetService("TweenService")
+local StarterGui          = game:GetService("StarterGui")
+local Players             = game:GetService("Players")
+local RunService          = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LocalPlayer         = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
 if game.PlaceId ~= 9391468976 then
     LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
@@ -47,6 +49,8 @@ local CONFIG = {
     FacingDotThreshold     = -0.6,
     RetryDelay             = 0.04,
     RetryFire              = true,
+    CloseRange             = 5,
+    CounterKey             = Enum.KeyCode.Four,
 }
 
 if _G.retryfire ~= nil then
@@ -57,8 +61,9 @@ end
 --  STATE
 -- ──────────────────────────────────────────────
 local AutoBlackFlash = false
-local isCooling  = false
-local isRetrying = false
+local AutoCounter    = false
+local isCooling      = false
+local isRetrying     = false
 
 -- ──────────────────────────────────────────────
 --  REMOTES
@@ -106,6 +111,12 @@ local function isAliveModel(model)
     local root = model:FindFirstChild("HumanoidRootPart")
     local humanoid = model:FindFirstChildOfClass("Humanoid")
     return root and humanoid and humanoid.Health > 0
+end
+
+local function simulateKeyPress(keyCode)
+    VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
 end
 
 local function isTargetFacingAway(targetRoot)
@@ -309,6 +320,39 @@ local function performCurvedDash(targetRoot)
 end
 
 -- ──────────────────────────────────────────────
+--  AUTO COUNTER LOGIC
+-- ──────────────────────────────────────────────
+RunService.Heartbeat:Connect(function()
+    if not AutoCounter then return end
+
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+
+    if not rootPart or (humanoid and humanoid.Health <= 0) then return end
+
+    local overlapParams = OverlapParams.new()
+    overlapParams.FilterDescendantsInstances = {char}
+    overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+
+    local nearbyParts = workspace:GetPartBoundsInRadius(rootPart.Position, CONFIG.CloseRange, overlapParams)
+
+    for _, part in pairs(nearbyParts) do
+        if (part.Name == "Hitbox" or part.Name == "RightHand" or part.Name == "LeftHand") and part:FindFirstChildOfClass("TouchInterest") then
+            local spawnPosition = Vector3.new(part.Position.X, rootPart.Position.Y, part.Position.Z)
+            rootPart.CFrame = CFrame.new(rootPart.Position, spawnPosition)
+
+            task.spawn(simulateKeyPress, CONFIG.CounterKey)
+
+            task.wait(0.5)
+            break
+        end
+    end
+end)
+
+-- ──────────────────────────────────────────────
 --  HOOK
 -- ──────────────────────────────────────────────
 if targetRemote then
@@ -452,11 +496,11 @@ Window:AddToggle({
     text = "Auto Counter [Beta]",
     flag = "AutoCounter",
     callback = function(value)
+        AutoCounter = value
         if value then
-            Notify("Auto Counter", "This feature is coming soon!", 3)
-            task.defer(function()
-                library.flags.AutoCounter = false
-            end)
+            Notify("Auto Counter", "Enabled", 2)
+        else
+            Notify("Auto Counter", "Disabled", 2)
         end
     end
 })
