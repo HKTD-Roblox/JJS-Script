@@ -23,7 +23,6 @@ end
 
 local PredictionFactor = 0.08
 local SafetyDistance = 3.0
-local SmoothSpeed = 1.0
 local TouchDistance = 4.8
 local TouchWait = 0.12
 local AttemptsLimit = 12
@@ -34,6 +33,49 @@ local BypassReady = false
 local BypassRunning = false
 local KillEnabled = false
 local KillConnection = nil
+local ControlsRef = nil
+
+local function GetControls()
+    local ok, controls = pcall(function()
+        local scripts = LocalPlayer:WaitForChild("PlayerScripts", 2)
+        local module = require(scripts:WaitForChild("PlayerModule", 2))
+        return module:GetControls()
+    end)
+    if ok then return controls end
+    return nil
+end
+
+local function DisablePlayerControl()
+    ControlsRef = GetControls()
+    if ControlsRef then
+        pcall(function()
+            ControlsRef:Disable()
+        end)
+    end
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        pcall(function()
+            hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+        end)
+    end
+end
+
+local function EnablePlayerControl()
+    if ControlsRef then
+        pcall(function()
+            ControlsRef:Enable()
+        end)
+    end
+    ControlsRef = nil
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        pcall(function()
+            hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+        end)
+    end
+end
 
 local function GetHRP(char)
     return char and char:FindFirstChild("HumanoidRootPart")
@@ -115,12 +157,18 @@ local function SmoothTeleportTo(targetRoot, duration)
     return true
 end
 
+local function FaceTarget(myHRP, targetPos)
+    local pos = myHRP.Position
+    local flatTarget = Vector3.new(targetPos.X, pos.Y, targetPos.Z)
+    if (flatTarget - pos).Magnitude < 0.05 then return end
+    myHRP.CFrame = CFrame.lookAt(pos, flatTarget)
+end
+
 local function RunBypassAntiCheat()
     if BypassRunning then
         Notify("Bypass Anti-Cheat", "Already running...", 2)
         return
     end
-
     if BypassReady then
         Notify("Bypass Anti-Cheat", "Already bypassed. Use Kill Everyone first.", 3)
         return
@@ -160,25 +208,31 @@ local function SetKillEveryone(state)
         BypassReady = false
         KillEnabled = true
         Notify("Kill Everyone", "Enabled", 2)
+        DisablePlayerControl()
 
         local targetIndex = 1
         local waitingTouch = false
         local touchTime = 0
         local currentTarget = nil
+        local hasTeleported = false
 
         if KillConnection then
             KillConnection:Disconnect()
             KillConnection = nil
         end
 
-        KillConnection = RunService.Heartbeat:Connect(function(dt)
+        KillConnection = RunService.Heartbeat:Connect(function()
             if not KillEnabled then return end
             if not IsAlive(LocalPlayer.Character) then return end
+
+            local myHRP = GetHRP(LocalPlayer.Character)
+            if not myHRP then return end
 
             local aliveList = GetAllAlivePlayers()
             if #aliveList == 0 then
                 currentTarget = nil
                 waitingTouch = false
+                hasTeleported = false
                 return
             end
 
@@ -192,6 +246,7 @@ local function SetKillEveryone(state)
                 targetIndex = targetIndex + 1
                 currentTarget = nil
                 waitingTouch = false
+                hasTeleported = false
                 return
             end
 
@@ -199,18 +254,26 @@ local function SetKillEveryone(state)
                 currentTarget = target
                 waitingTouch = false
                 touchTime = 0
+                hasTeleported = false
             end
-
-            local myHRP = GetHRP(LocalPlayer.Character)
-            if not myHRP then return end
 
             local velocity = GetVelocity(target)
             local predicted = target.Position + (velocity * PredictionFactor)
-            local offset = predicted - myHRP.Position
-            local dist = offset.Magnitude
+            local dist = (predicted - myHRP.Position).Magnitude
+
+            if not hasTeleported then
+                local offset = predicted - myHRP.Position
+                if offset.Magnitude > 0.05 then
+                    local finalPos = predicted - (offset.Unit * SafetyDistance)
+                    myHRP.CFrame = CFrame.lookAt(finalPos, predicted)
+                end
+                hasTeleported = true
+                return
+            end
+
+            FaceTarget(myHRP, predicted)
 
             if dist <= TouchDistance then
-                myHRP.CFrame = CFrame.lookAt(myHRP.Position, predicted)
                 if not waitingTouch then
                     waitingTouch = true
                     touchTime = tick()
@@ -218,14 +281,11 @@ local function SetKillEveryone(state)
                     targetIndex = targetIndex + 1
                     currentTarget = nil
                     waitingTouch = false
+                    hasTeleported = false
                 end
-                return
+            else
+                waitingTouch = false
             end
-
-            waitingTouch = false
-            local finalPos = predicted - (offset.Unit * SafetyDistance)
-            local alpha = math.clamp(SmoothSpeed * dt * 60, 0, 1)
-            myHRP.CFrame = myHRP.CFrame:Lerp(CFrame.lookAt(finalPos, predicted), alpha)
         end)
     else
         KillEnabled = false
@@ -233,6 +293,7 @@ local function SetKillEveryone(state)
             KillConnection:Disconnect()
             KillConnection = nil
         end
+        EnablePlayerControl()
         Notify("Kill Everyone", "Disabled", 2)
     end
 end
