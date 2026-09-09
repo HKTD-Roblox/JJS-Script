@@ -274,7 +274,7 @@ end
 
 -- Hiện thông báo
 StarterGui:SetCore("SendNotification", {
-    Title = "JJS Auto Farm",
+    Title = "JJS Auto-Farm",
     Text = "Do you want to enable the JJS Auto-Farm script?",
     Duration = 999999,
     Callback = Bindable,
