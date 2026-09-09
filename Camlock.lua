@@ -9,6 +9,11 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
+if game.PlaceId ~= 9391468976 then
+    LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
+    return
+end
+
 -- ──────────────────────────────────────────────
 --  NATIVE ROBLOX NOTIFICATION WITH YES / NO
 -- ──────────────────────────────────────────────
