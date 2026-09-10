@@ -6,7 +6,7 @@ local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 
-if game.PlaceId ~= 9391468976 then
+if game.PlaceId ~= 9391468976 and game.PlaceId ~= 3508322461 then
     LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
     return
 end
