@@ -12,7 +12,7 @@ local RunService          = game:GetService("RunService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer         = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
-if game.PlaceId ~= 9391468976 then
+if game.PlaceId ~= 9391468976 and game.PlaceId ~= 3508322461 then
     LocalPlayer:Kick("This script only works in Jujutsu Shenanigans")
     return
 end
