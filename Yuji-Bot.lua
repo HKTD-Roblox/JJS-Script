@@ -12,9 +12,9 @@ local LP = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 -- =====================================================
---  CHECK GAME
+--  CHECK GAME PLACE ID
 -- =====================================================
-if game.PlaceId ~= 9391468976 then
+if game.PlaceId ~= 9391468976 and game.PlaceId ~= 3508322461 then
     LP:Kick("This script only works in Jujutsu Shenanigans")
     return
 end
