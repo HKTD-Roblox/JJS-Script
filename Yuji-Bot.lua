@@ -1326,11 +1326,11 @@ toggleBtn.MouseButton1Click:Connect(function()
 	if STATE.active then
 		releaseAll()
 		scanTargets(true)
-		toggleBtn.Text = "STOP"
+		toggleBtn.Text = "STOP YUJI BOT"
 		toggleBtn.BackgroundColor3 = Color3.fromRGB(35, 140, 70)
 	else
 		releaseAll()
-		toggleBtn.Text = "START"
+		toggleBtn.Text = "START YUJI BOT"
 		toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 52)
 	end
 end)
