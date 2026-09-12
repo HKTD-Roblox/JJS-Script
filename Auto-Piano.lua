@@ -177,7 +177,7 @@ end)
 
 -- UI
 local rf = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-local win = rf:CreateWindow({Name = "Sedse's MIDI Player", LoadingTitle = "Loading...", ConfigurationSaving = {Enabled = false}})
+local win = rf:CreateWindow({Name = "JJS MIDI Player", LoadingTitle = "Loading...", ConfigurationSaving = {Enabled = false}})
 local tab = win:CreateTab("Main")
 
 local function scan()
