@@ -4,10 +4,9 @@ local runService = game:GetService("RunService")
 local tweenService = game:GetService("TweenService")
 local userInputService = game:GetService("UserInputService")
 local coreGui = game:GetService("CoreGui")
-print("Please Don't skid or deobsufacte this")
 local localPlayer = players.LocalPlayer
 local nexooo = Instance.new("ScreenGui")
-nexooo.Name = "NEXOOO"
+nexooo.Name = "Jujutsu Shenanigans"
 nexooo.ResetOnSpawn = false
 nexooo.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 local function f1()
@@ -40,8 +39,8 @@ if not pcall(function()
     uiStroke.Parent = frame
     local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.new(1, 0, 0, 26)
-    textLabel.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-    textLabel.Text = "  made by NEXOOO"
+    textLabel.BackgroundColor3 = Color3a   .fromRGB(28, 28, 34)
+    textLabel.Text = "  Itadori Yuji  "
     textLabel.TextColor3 = Color3.fromRGB(160, 160, 175)
     textLabel.TextSize = 12
     textLabel.Font = Enum.Font.Code
@@ -429,4 +428,8 @@ if not v11 then
                                             uiStroke3.Color = Color3.fromRGB(60, 40, 40)
                                         end
                                     end)
-                                    print("loaded successfully")
+                                    game:GetService("StarterGui"):SetCore("SendNotification", {
+                                        Title = "Itadori Yuji",
+                                        Text = "Script loaded successfully!",
+                                        Duration = 5
+                                    })
