@@ -6,7 +6,7 @@ local userInputService = game:GetService("UserInputService")
 local coreGui = game:GetService("CoreGui")
 local localPlayer = players.LocalPlayer
 local nexooo = Instance.new("ScreenGui")
-nexooo.Name = "Jujutsu Shenanigans"
+nexooo.Name = "Itadori Yuji"
 nexooo.ResetOnSpawn = false
 nexooo.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 local function f1()
