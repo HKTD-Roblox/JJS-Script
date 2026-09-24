@@ -7,6 +7,11 @@ local PlayerGui = lp:WaitForChild("PlayerGui")
 local cam = workspace.CurrentCamera
 local isExecuting = false
 local CFloop = nil
+
+local BTN_IMAGE_OFF = "rbxassetid://6256840888"
+local BTN_IMAGE_ON = "rbxassetid://12815575858"
+local ICON_IMAGE = "rbxassetid://97537169093698"
+
 local function doBlackFlash()
 if isExecuting or not lp.Character then return end
 local char = lp.Character
@@ -54,25 +59,53 @@ hum.PlatformStand = false
 head.Anchored = false
 end)
 end
+
 local oldGui = PlayerGui:FindFirstChild("BlackFlashExecutor")
 if oldGui then oldGui:Destroy() end
-local sg = Instance.new("ScreenGui", PlayerGui)
+
+local sg = Instance.new("ScreenGui")
 sg.Name = "BlackFlashExecutor"
 sg.ResetOnSpawn = false
-local btn = Instance.new("TextButton", sg)
-btn.Size = UDim2.new(0, 100, 0, 100)
-btn.Position = UDim2.new(0, 20, 0.5, -50)
-btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-btn.Text = "Yuta"
-btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-btn.Font = Enum.Font.Ubuntu
-btn.TextSize = 14
-btn.Active = true
-btn.Draggable = true
-Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
-Instance.new("UIStroke", btn).Color = Color3.fromRGB(255, 255, 255)
-btn.MouseButton1Click:Connect(doBlackFlash)
+sg.Parent = PlayerGui
+
+local yutaBtn = Instance.new("ImageButton")
+yutaBtn.Name = "YutaButton"
+yutaBtn.Parent = sg
+yutaBtn.Size = UDim2.new(0, 70, 0, 70)
+yutaBtn.Position = UDim2.new(0, 20, 0.5, -35)
+yutaBtn.BackgroundTransparency = 1
+yutaBtn.Image = BTN_IMAGE_OFF
+yutaBtn.Active = true
+yutaBtn.Draggable = true
+
+local yutaIcon = Instance.new("ImageLabel")
+yutaIcon.Name = "YutaIcon"
+yutaIcon.Parent = yutaBtn
+yutaIcon.BackgroundTransparency = 1
+yutaIcon.Size = UDim2.new(0, 76, 0, 76)
+yutaIcon.Position = UDim2.new(0, -2, 0, -4)
+yutaIcon.Image = ICON_IMAGE
+yutaIcon.ZIndex = 2
+
+local yutaCorner = Instance.new("UICorner")
+yutaCorner.CornerRadius = UDim.new(1, 0)
+yutaCorner.Parent = yutaBtn
+
+yutaBtn.MouseButton1Click:Connect(function()
+if isExecuting then return end
+yutaBtn.Image = BTN_IMAGE_ON
+doBlackFlash()
+task.delay(4.67, function()
+if yutaBtn and yutaBtn.Parent then
+yutaBtn.Image = BTN_IMAGE_OFF
+end
+end)
+end)
+
 lp.CharacterAdded:Connect(function()
 isExecuting = false
 if CFloop then CFloop:Disconnect() CFloop = nil end
+if yutaBtn and yutaBtn.Parent then
+yutaBtn.Image = BTN_IMAGE_OFF
+end
 end)
