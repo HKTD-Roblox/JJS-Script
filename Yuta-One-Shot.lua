@@ -14,7 +14,7 @@ local keyConnection = nil
 local selectedDevice = nil
 
 local BUTTON_IMAGE = "rbxassetid://6256840888"
-local ICON_IMAGE = "rbxassetid://97537169093698"
+local ICON_IMAGE = "rbxassetid://12637670015"
 
 local function showNotification(title, text, duration, button1, button2, callback)
     pcall(function()
