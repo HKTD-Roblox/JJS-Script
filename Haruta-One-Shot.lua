@@ -1,6 +1,5 @@
 _G.Multi = 40
-_G.Enabled = true  -- Set to false to disable
-
+_G.Enabled = true
 local mt = getrawmetatable(game)
 local oldNamecall = mt.__namecall
 setreadonly(mt, false)
