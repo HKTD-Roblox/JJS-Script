@@ -8,4 +8,3 @@ game:GetService("StarterGui"):SetCore("SendNotification", {
     Text = "COPIED DISCORD LINK\n\https://discord.gg/2ACZAkcmDP",
     Duration = 5
 })
-y
