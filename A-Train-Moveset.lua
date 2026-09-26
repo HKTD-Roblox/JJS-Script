@@ -11,7 +11,7 @@ Fluent:Notify({
 })
 
 Fluent:Notify({
-    Title = "By Zorcex",
+    Title = "Make By Zorcex",
     Content = "Don't forget to follow us for more!",
     Duration = 4
 })
