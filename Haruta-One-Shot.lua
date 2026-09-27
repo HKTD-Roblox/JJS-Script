@@ -23,3 +23,9 @@ mt.__namecall = newcclosure(function(self, ...)
 end)
 
 setreadonly(mt, true)
+
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Haruta One Shot",
+    Text = "Script loaded successfully!",
+    Duration = 2
+})
