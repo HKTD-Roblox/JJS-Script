@@ -283,9 +283,16 @@ local function setupDivergentFistHook()
                 task.defer(function() isCooling = false end)
             end
         end)
-        task.spawn(function()
+                task.spawn(function()
             if not targetRoot or not targetRoot.Parent then return end
             performCurvedDash(targetRoot)
+        end)
+        task.delay(0.3, function()
+            isRetrying = true
+            pcall(function()
+                targetRemote:FireServer(table.unpack(args))
+            end)
+            isRetrying = false
         end)
         return result
     end)
