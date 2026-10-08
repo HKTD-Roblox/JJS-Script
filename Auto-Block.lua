@@ -1,3 +1,8 @@
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LocalPlayer = Players.LocalPlayer
+
 local JJS_Game = {
     [9391468976] = true,
     [17255146011] = true,
@@ -6,30 +11,22 @@ local JJS_Game = {
 }
 
 if not JJS_Game[game.PlaceId] then
-    Players.LocalPlayer:Kick("This is not Jujutsu Shenanigans game!")
+    LocalPlayer:Kick("This is not Jujutsu Shenanigans game!")
 end
-
-local Players = game:GetService("Players")
-local StarterGui = game:GetService("StarterGui")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-
-local LocalPlayer = Players.LocalPlayer
-
-local SWING_ID = "4571259077"
-
-local M1_IDS = {
-    ["8595975878"] = true,
-    ["8595975458"] = true,
-    ["8595974357"] = true
-}
 
 local MAX_DISTANCE = 15
 
-local queue = {}
-local queued = {}
-local currentTarget = nil
+local ATTACK_IDS = {
+    ["4571259077"] = true,
+    ["8595975878"] = true,
+    ["8595975458"] = true,
+    ["8595974357"] = true,
+}
+
+local attackQueue = {}
+local sequence = 0
 local blocking = false
-local oldCFrame = nil
+local processing = false
 
 local function getRoot(character)
     return character and character:FindFirstChild("HumanoidRootPart")
@@ -82,149 +79,127 @@ local function faceTarget(character)
     )
 end
 
-local function addToQueue(character)
-    if queued[character] then
+local function addAttack(character, track)
+    if not character or not character.Parent then
         return
     end
 
-    if getDistance(character) > MAX_DISTANCE then
+    local distance = getDistance(character)
+
+    if distance > MAX_DISTANCE then
         return
     end
 
-    queued[character] = true
-    table.insert(queue, character)
+    sequence += 1
+
+    table.insert(attackQueue, {
+        Character = character,
+        Track = track,
+        Distance = distance,
+        Sequence = sequence
+    })
 end
 
-local function removeFromQueue(character)
-    queued[character] = nil
+local function sortQueue()
+    table.sort(attackQueue, function(a, b)
+        local aDistance = getDistance(a.Character)
+        local bDistance = getDistance(b.Character)
 
-    for i = #queue, 1, -1 do
-        if queue[i] == character then
-            table.remove(queue, i)
+        if math.abs(aDistance - bDistance) > 0.05 then
+            return aDistance < bDistance
         end
-    end
+
+        return a.Sequence < b.Sequence
+    end)
 end
 
-local processNext
-
-processNext = function()
-    if currentTarget then
+local function processNext()
+    if processing then
         return
     end
 
-    while #queue > 0 do
-        local character = table.remove(queue, 1)
-        queued[character] = nil
+    processing = true
 
-        if character
-            and character.Parent
-            and getRoot(character)
-            and getDistance(character) <= MAX_DISTANCE then
+    while #attackQueue > 0 do
+        sortQueue()
 
-            currentTarget = character
+        local attack = table.remove(attackQueue, 1)
 
-            local myRoot = getRoot(LocalPlayer.Character)
-
-            if not myRoot then
-                currentTarget = nil
-                processNext()
-                return
-            end
-
-            oldCFrame = myRoot.CFrame
-
-            faceTarget(character)
-            setBlock(true)
-
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-
-            if not humanoid then
-                setBlock(false)
-                currentTarget = nil
-                processNext()
-                return
-            end
-
-            local finished = false
-            local connection
-
-            connection = humanoid.AnimationPlayed:Connect(function(track)
-                local animation = track.Animation
-
-                if not animation then
-                    return
-                end
-
-                local id = animation.AnimationId:match("%d+")
-
-                if not id or not M1_IDS[id] then
-                    return
-                end
-
-                if finished then
-                    return
-                end
-
-                finished = true
-
-                track.Stopped:Wait()
-
-                if connection then
-                    connection:Disconnect()
-                    connection = nil
-                end
-
-                setBlock(false)
-
-                local root = getRoot(LocalPlayer.Character)
-
-                if root and oldCFrame then
-                    root.CFrame = oldCFrame
-                end
-
-                currentTarget = nil
-                oldCFrame = nil
-
-                processNext()
-            end)
-
-            task.spawn(function()
-                while currentTarget == character and not finished do
-                    if getDistance(character) > MAX_DISTANCE then
-                        finished = true
-
-                        if connection then
-                            connection:Disconnect()
-                            connection = nil
-                        end
-
-                        setBlock(false)
-
-                        local root = getRoot(LocalPlayer.Character)
-
-                        if root and oldCFrame then
-                            root.CFrame = oldCFrame
-                        end
-
-                        currentTarget = nil
-                        oldCFrame = nil
-
-                        processNext()
-
-                        return
-                    end
-
-                    task.wait()
-                end
-            end)
-
-            return
+        if not attack then
+            break
         end
+
+        local character = attack.Character
+        local track = attack.Track
+
+        if not character
+            or not character.Parent
+            or not track
+        then
+            continue
+        end
+
+        local root = getRoot(LocalPlayer.Character)
+        local targetRoot = getRoot(character)
+
+        if not root or not targetRoot then
+            continue
+        end
+
+        if getDistance(character) > MAX_DISTANCE then
+            continue
+        end
+
+        local oldCFrame = root.CFrame
+
+        faceTarget(character)
+        setBlock(true)
+
+        local finished = false
+
+        local connection = track.Stopped:Connect(function()
+            finished = true
+        end)
+
+        if not track.IsPlaying then
+            finished = true
+        end
+
+        while not finished do
+            if not character.Parent then
+                break
+            end
+
+            if not getRoot(LocalPlayer.Character) then
+                break
+            end
+
+            task.wait()
+        end
+
+        connection:Disconnect()
+
+        setBlock(false)
+
+        local currentRoot = getRoot(LocalPlayer.Character)
+
+        if currentRoot and oldCFrame then
+            currentRoot.CFrame = oldCFrame
+        end
+
+        task.wait()
     end
+
+    setBlock(false)
+    processing = false
 end
 
 local function watchCharacter(character)
     local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+    if not humanoid then
+        humanoid = character:WaitForChild("Humanoid", 5)
+    end
 
     if not humanoid then
         return
@@ -239,7 +214,7 @@ local function watchCharacter(character)
 
         local id = animation.AnimationId:match("%d+")
 
-        if id ~= SWING_ID then
+        if not id or not ATTACK_IDS[id] then
             return
         end
 
@@ -247,8 +222,8 @@ local function watchCharacter(character)
             return
         end
 
-        addToQueue(character)
-        processNext()
+        addAttack(character, track)
+        task.spawn(processNext)
     end)
 end
 
@@ -258,20 +233,23 @@ local function watchPlayer(player)
     end
 
     if player.Character then
-        watchCharacter(player.Character)
+        task.spawn(function()
+            watchCharacter(player.Character)
+        end)
     end
 
-    player.CharacterAdded:Connect(watchCharacter)
+    player.CharacterAdded:Connect(function(character)
+        watchCharacter(character)
+    end)
 end
 
 for _, player in ipairs(Players:GetPlayers()) do
     watchPlayer(player)
 end
 
-Players.PlayerAdded:Connect(watchPlayer)
-
 StarterGui:SetCore("SendNotification", {
     Title = "Auto Block JJS",
     Text = "Script loaded successfully!",
-    Duration = 2
+    Duration = 5,
+    Button1 = "OK"
 })
