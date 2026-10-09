@@ -63,7 +63,7 @@ local dfOk = targetRemote ~= nil
 local todoOk = PebbleThrowRemote ~= nil and RightActivated ~= nil and BruteForceRemote ~= nil
 
 if not dfOk and not todoOk then
-    notify("Script", "Load failed", 4)
+    notify("Auto Black Flash", "Script loading failed!", 4)
     return
 end
 
