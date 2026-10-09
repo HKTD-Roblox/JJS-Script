@@ -2,7 +2,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
-
 local LocalPlayer = Players.LocalPlayer
 
 local function notify(title, text, duration)
@@ -31,14 +30,14 @@ local DF_CONFIG = {
     RetryFire = true,
 }
 
-if _G.retryfire ~= nil then
-    DF_CONFIG.RetryFire = _G.retryfire
-end
-
 local TODO_CONFIG = {
     Delay_AfterPebble = 1,
     Delay_AfterRight = 0,
     Delay_AfterBrute1 = 0.60,
+}
+
+local MAHITO_CONFIG = {
+    RefireDelay = 0.3,
 }
 
 local function getRemote(...)
@@ -53,17 +52,19 @@ local function getRemote(...)
     return ok and remote or nil
 end
 
-local targetRemote = getRemote("Knit", "Knit", "Services", "DivergentFistService", "RE", "Activated")
-local returnSkillRemote = getRemote("Knit", "Knit", "Services", "ItadoriService", "RE", "RightActivated")
-local PebbleThrowRemote = getRemote("Knit", "Knit", "Services", "PebbleThrowService", "RE", "Activated")
-local RightActivated = getRemote("Knit", "Knit", "Services", "TodoService", "RE", "RightActivated")
-local BruteForceRemote = getRemote("Knit", "Knit", "Services", "BruteForceService", "RE", "Activated")
+local divergentFistRemote = getRemote("Knit", "Knit", "Services", "DivergentFistService", "RE", "Activated")
+local itadoriRightRemote = getRemote("Knit", "Knit", "Services", "ItadoriService", "RE", "RightActivated")
+local pebbleThrowRemote = getRemote("Knit", "Knit", "Services", "PebbleThrowService", "RE", "Activated")
+local todoRightRemote = getRemote("Knit", "Knit", "Services", "TodoService", "RE", "RightActivated")
+local bruteForceRemote = getRemote("Knit", "Knit", "Services", "BruteForceService", "RE", "Activated")
+local focusStrikeRemote = getRemote("Knit", "Knit", "Services", "FocusStrikeService", "RE", "Activated")
 
-local dfOk = targetRemote ~= nil
-local todoOk = PebbleThrowRemote ~= nil and RightActivated ~= nil and BruteForceRemote ~= nil
+local dfOk = divergentFistRemote ~= nil
+local todoOk = pebbleThrowRemote ~= nil and todoRightRemote ~= nil and bruteForceRemote ~= nil
+local mahitoOk = focusStrikeRemote ~= nil
 
-if not dfOk and not todoOk then
-    notify("Auto Black Flash", "Script loading failed!", 4)
+if not dfOk and not todoOk and not mahitoOk then
+    notify("Auto Black Flash", "Script loading failed!", 3)
     return
 end
 
@@ -233,66 +234,59 @@ local function performCurvedDash(targetRoot)
     playAttackAnimation()
 end
 
-local isCooling = false
-local isRetrying = false
+local dfCooling = false
+local dfRetrying = false
 
 local function setupDivergentFistHook()
     if not dfOk then return end
     local oldNamecall
     oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        if getnamecallmethod() ~= "FireServer" or self ~= targetRemote then
+        if getnamecallmethod() ~= "FireServer" or self ~= divergentFistRemote then
             return oldNamecall(self, ...)
         end
-        if isRetrying then
+        if dfRetrying then
             return oldNamecall(self, ...)
         end
-        if isCooling then
+        if dfCooling then
             return oldNamecall(self, ...)
         end
-        isCooling = true
+        dfCooling = true
         local result = oldNamecall(self, ...)
         local args = { ... }
         local target = findNearestTarget()
         local targetRoot = target and target:FindFirstChild("HumanoidRootPart")
         task.delay(DF_CONFIG.FireDelay, function()
             if targetRoot and targetRoot.Parent and not isTargetFacingAway(targetRoot) then
-                if returnSkillRemote then
-                    pcall(function() returnSkillRemote:FireServer() end)
+                if itadoriRightRemote then
+                    pcall(function() itadoriRightRemote:FireServer() end)
                 end
                 task.spawn(function()
                     task.wait(DF_CONFIG.RetryDelay)
                     if not targetRoot.Parent or not isAliveModel(targetRoot.Parent) then
-                        task.defer(function() isCooling = false end)
+                        task.defer(function() dfCooling = false end)
                         return
                     end
                     performCurvedDash(targetRoot)
-                    local shouldRetryFire = (_G.retryfire ~= nil) and _G.retryfire or DF_CONFIG.RetryFire
+                    local shouldRetryFire = (DF_CONFIG.RetryFire ~= nil) and DF_CONFIG.RetryFire or DF_CONFIG.RetryFire
                     if not isTargetFacingAway(targetRoot) then
                     elseif not shouldRetryFire then
                     else
-                        isRetrying = true
-                        pcall(function() targetRemote:FireServer(table.unpack(args)) end)
+                        dfRetrying = true
+                        pcall(function() divergentFistRemote:FireServer(table.unpack(args)) end)
                         task.wait(DF_CONFIG.FireDelay)
-                        pcall(function() targetRemote:FireServer(table.unpack(args)) end)
-                        isRetrying = false
+                        pcall(function() divergentFistRemote:FireServer(table.unpack(args)) end)
+                        dfRetrying = false
                     end
-                    task.defer(function() isCooling = false end)
+                    task.defer(function() dfCooling = false end)
                 end)
             else
-                pcall(function() targetRemote:FireServer(table.unpack(args)) end)
-                task.defer(function() isCooling = false end)
+                pcall(function() divergentFistRemote:FireServer(table.unpack(args)) end)
+                task.defer(function() dfCooling = false end)
             end
         end)
-                task.spawn(function()
+        task.spawn(function()
             if not targetRoot or not targetRoot.Parent then return end
             performCurvedDash(targetRoot)
-        end)
-        task.delay(0.3, function()
-            isRetrying = true
-            pcall(function()
-                targetRemote:FireServer(table.unpack(args))
-            end)
-            isRetrying = false
         end)
         return result
     end)
@@ -312,16 +306,16 @@ local function runCombo()
     if isComboRunning then return end
     isComboRunning = true
     task.delay(TODO_CONFIG.Delay_AfterPebble, function()
-        pcall(function() RightActivated:FireServer() end)
+        pcall(function() todoRightRemote:FireServer() end)
         task.delay(TODO_CONFIG.Delay_AfterRight, function()
             local bruteArg = getMovesetItem("Brute Force")
             if bruteArg then
-                pcall(function() BruteForceRemote:FireServer(bruteArg) end)
+                pcall(function() bruteForceRemote:FireServer(bruteArg) end)
             end
             task.delay(TODO_CONFIG.Delay_AfterBrute1, function()
                 local bruteArg2 = getMovesetItem("Brute Force")
                 if bruteArg2 then
-                    pcall(function() BruteForceRemote:FireServer(bruteArg2) end)
+                    pcall(function() bruteForceRemote:FireServer(bruteArg2) end)
                 end
                 task.defer(function() isComboRunning = false end)
             end)
@@ -333,8 +327,7 @@ local function setupTodoHook()
     if not todoOk then return end
     local oldNamecall
     oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        if method == "FireServer" and self == PebbleThrowRemote then
+        if getnamecallmethod() == "FireServer" and self == pebbleThrowRemote then
             local result = oldNamecall(self, ...)
             task.spawn(runCombo)
             return result
@@ -343,9 +336,43 @@ local function setupTodoHook()
     end)
 end
 
-local loadOk, loadErr = pcall(function()
+local mahitoCooling = false
+local mahitoRetrying = false
+
+local function setupMahitoHook()
+    if not mahitoOk then return end
+    local oldNamecall
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        if getnamecallmethod() ~= "FireServer" or self ~= focusStrikeRemote then
+            return oldNamecall(self, ...)
+        end
+        if mahitoRetrying then
+            return oldNamecall(self, ...)
+        end
+        if mahitoCooling then
+            return oldNamecall(self, ...)
+        end
+        mahitoCooling = true
+        local result = oldNamecall(self, ...)
+        local args = { ... }
+        task.delay(MAHITO_CONFIG.RefireDelay, function()
+            mahitoRetrying = true
+            pcall(function()
+                focusStrikeRemote:FireServer(table.unpack(args))
+            end)
+            mahitoRetrying = false
+            task.defer(function()
+                mahitoCooling = false
+            end)
+        end)
+        return result
+    end)
+end
+
+local loadOk = pcall(function()
     setupDivergentFistHook()
     setupTodoHook()
+    setupMahitoHook()
 end)
 
 if not loadOk then
@@ -355,4 +382,4 @@ end
 
 notify("Auto Black Flash", "Script loaded successfully!", 3)
 task.wait(3)
-notify("Auto Black Flash", "Script supports Yuji & Todo only!", 5)
+notify("Auto Black Flash", "Script Supports: Yuji, Todo, Mahito", 5)
