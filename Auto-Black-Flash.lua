@@ -288,6 +288,13 @@ local function setupDivergentFistHook()
             if not targetRoot or not targetRoot.Parent then return end
             performCurvedDash(targetRoot)
         end)
+        task.delay(0.3, function()
+            dfRetrying = true
+            pcall(function()
+                divergentFistRemote:FireServer(table.unpack(args))
+            end)
+            dfRetrying = false
+        end)
         return result
     end)
 end
