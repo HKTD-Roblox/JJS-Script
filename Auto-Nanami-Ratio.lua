@@ -5,3 +5,9 @@ game.ReplicatedStorage.Knit.Knit.Services.NanamiService.RE.Effects.OnClientEvent
 		game.ReplicatedStorage.Knit.Knit.Services.NanamiService.RE.RightActivated:FireServer()
 	end
 end)
+
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Auto Nanami Ratio",
+    Text = "Script ",
+    Duration = 5
+})
