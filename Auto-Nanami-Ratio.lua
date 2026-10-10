@@ -8,6 +8,6 @@ end)
 
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "Auto Nanami Ratio",
-    Text = "Script ",
+    Text = "Script loaded successfully!",
     Duration = 5
 })
