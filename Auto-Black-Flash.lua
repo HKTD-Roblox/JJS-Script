@@ -40,6 +40,10 @@ local MAHITO_CONFIG = {
     RefireDelay = 0.3,
 }
 
+local YUTA_CONFIG = {
+    RefireDelay = 0.3,
+}
+
 local function getRemote(...)
     local path = { ... }
     local ok, remote = pcall(function()
@@ -58,12 +62,14 @@ local pebbleThrowRemote = getRemote("Knit", "Knit", "Services", "PebbleThrowServ
 local todoRightRemote = getRemote("Knit", "Knit", "Services", "TodoService", "RE", "RightActivated")
 local bruteForceRemote = getRemote("Knit", "Knit", "Services", "BruteForceService", "RE", "Activated")
 local focusStrikeRemote = getRemote("Knit", "Knit", "Services", "FocusStrikeService", "RE", "Activated")
+local resoluteSlashRemote = getRemote("Knit", "Knit", "Services", "ResoluteSlashService", "RE", "Activated")
 
 local dfOk = divergentFistRemote ~= nil
 local todoOk = pebbleThrowRemote ~= nil and todoRightRemote ~= nil and bruteForceRemote ~= nil
 local mahitoOk = focusStrikeRemote ~= nil
+local yutaOk = resoluteSlashRemote ~= nil
 
-if not dfOk and not todoOk and not mahitoOk then
+if not dfOk and not todoOk and not mahitoOk and not yutaOk then
     notify("Auto Black Flash", "Script loading failed!", 3)
     return
 end
@@ -376,10 +382,44 @@ local function setupMahitoHook()
     end)
 end
 
+local yutaCooling = false
+local yutaRetrying = false
+
+local function setupYutaHook()
+    if not yutaOk then return end
+    local oldNamecall
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        if getnamecallmethod() ~= "FireServer" or self ~= resoluteSlashRemote then
+            return oldNamecall(self, ...)
+        end
+        if yutaRetrying then
+            return oldNamecall(self, ...)
+        end
+        if yutaCooling then
+            return oldNamecall(self, ...)
+        end
+        yutaCooling = true
+        local result = oldNamecall(self, ...)
+        local args = { ... }
+        task.delay(YUTA_CONFIG.RefireDelay, function()
+            yutaRetrying = true
+            pcall(function()
+                resoluteSlashRemote:FireServer(table.unpack(args))
+            end)
+            yutaRetrying = false
+            task.defer(function()
+                yutaCooling = false
+            end)
+        end)
+        return result
+    end)
+end
+
 local loadOk = pcall(function()
     setupDivergentFistHook()
     setupTodoHook()
     setupMahitoHook()
+    setupYutaHook()
 end)
 
 if not loadOk then
@@ -389,4 +429,4 @@ end
 
 notify("Auto Black Flash", "Script loaded successfully!", 3)
 task.wait(3)
-notify("Auto Black Flash", "Script Supports: Yuji, Todo, Mahito", 5)
+notify("Auto Black Flash", "Script Supports: Yuji, Todo, Mahito, Yuta", 5)
