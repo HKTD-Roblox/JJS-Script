@@ -14,13 +14,13 @@ if not JJS_Game[game.PlaceId] then
     LocalPlayer:Kick("This is not Jujutsu Shenanigans game!")
 end
 
-local MAX_DISTANCE = 15
+local MAX_DISTANCE = 18
 
 local ATTACK_IDS = {
-    ["4571259077"] = true,
-    ["8595975878"] = true,
-    ["8595975458"] = true,
-    ["8595974357"] = true,
+    ["rbxassetid://4571259077"] = true,
+    ["rbxassetid://8595975878"] = true,
+    ["rbxassetid://8595975458"] = true,
+    ["rbxassetid://8595974357"] = true,
 }
 
 local blocking = false
@@ -48,7 +48,6 @@ local function faceTarget(character)
     local myRoot = getRoot(LocalPlayer.Character)
     local targetRoot = getRoot(character)
     if not myRoot or not targetRoot then return end
-
     local pos = myRoot.Position
     local targetPos = targetRoot.Position
     myRoot.CFrame = CFrame.lookAt(pos, Vector3.new(targetPos.X, pos.Y, targetPos.Z))
@@ -57,12 +56,16 @@ end
 local function onAttackDetected(character, track)
     if getDistance(character) > MAX_DISTANCE then return end
 
+    local myRoot = getRoot(LocalPlayer.Character)
+    if not myRoot then return end
+
+    local oldCFrame = myRoot.CFrame
+
     setBlock(true)
     faceTarget(character)
 
     local finished = false
-    local conn
-    conn = track.Stopped:Connect(function()
+    local conn = track.Stopped:Connect(function()
         finished = true
     end)
 
@@ -78,8 +81,16 @@ local function onAttackDetected(character, track)
         task.wait()
     end
 
-    if conn then conn:Disconnect() end
+    if conn then
+        conn:Disconnect()
+    end
+
     setBlock(false)
+
+    local currentRoot = getRoot(LocalPlayer.Character)
+    if currentRoot and oldCFrame then
+        currentRoot.CFrame = oldCFrame
+    end
 end
 
 local function watchCharacter(character)
@@ -90,8 +101,7 @@ local function watchCharacter(character)
         local animation = track.Animation
         if not animation then return end
 
-        local id = animation.AnimationId:match("%d+")
-        if not id or not ATTACK_IDS[id] then return end
+        if not ATTACK_IDS[animation.AnimationId] then return end
 
         task.spawn(onAttackDetected, character, track)
     end)
@@ -117,6 +127,6 @@ Players.PlayerAdded:Connect(watchPlayer)
 
 StarterGui:SetCore("SendNotification", {
     Title = "Auto Block JJS",
-    Text = "Early Block version loaded!",
+    Text = "Script loaded!",
     Duration = 4
 })
