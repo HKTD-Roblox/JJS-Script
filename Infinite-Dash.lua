@@ -7,9 +7,8 @@ hookfunction(tick, function(...)
     return fakeTime
 end)
 
-setclipboard("http://dsc.gg/zorcex")
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "Infinite Dash",
-    Text = "Copied Discord link:\nhttp://dsc.gg/zorcex",
+    Text = "Script loaded successfully!",
     Duration = 5
 })
