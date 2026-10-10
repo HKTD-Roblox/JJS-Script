@@ -1,4 +1,4 @@
-_G.Multi = 40
+_G.Multi = 100
 
 local mt = getrawmetatable(game)
 local oldNamecall = mt.__namecall
