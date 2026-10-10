@@ -23,10 +23,7 @@ local ATTACK_IDS = {
     ["8595974357"] = true,
 }
 
-local attackQueue = {}
-local sequence = 0
 local blocking = false
-local processing = false
 
 local function getRoot(character)
     return character and character:FindFirstChild("HumanoidRootPart")
@@ -35,207 +32,76 @@ end
 local function getDistance(character)
     local myRoot = getRoot(LocalPlayer.Character)
     local targetRoot = getRoot(character)
-
     if not myRoot or not targetRoot then
         return math.huge
     end
-
     return (myRoot.Position - targetRoot.Position).Magnitude
 end
 
 local function setBlock(state)
-    if blocking == state then
-        return
-    end
-
+    if blocking == state then return end
     blocking = state
-
-    VirtualInputManager:SendKeyEvent(
-        state,
-        Enum.KeyCode.F,
-        false,
-        game
-    )
+    VirtualInputManager:SendKeyEvent(state, Enum.KeyCode.F, false, game)
 end
 
 local function faceTarget(character)
     local myRoot = getRoot(LocalPlayer.Character)
     local targetRoot = getRoot(character)
+    if not myRoot or not targetRoot then return end
 
-    if not myRoot or not targetRoot then
-        return
-    end
-
-    local position = myRoot.Position
-    local targetPosition = targetRoot.Position
-
-    myRoot.CFrame = CFrame.lookAt(
-        position,
-        Vector3.new(
-            targetPosition.X,
-            position.Y,
-            targetPosition.Z
-        )
-    )
+    local pos = myRoot.Position
+    local targetPos = targetRoot.Position
+    myRoot.CFrame = CFrame.lookAt(pos, Vector3.new(targetPos.X, pos.Y, targetPos.Z))
 end
 
-local function addAttack(character, track)
-    if not character or not character.Parent then
-        return
-    end
+local function onAttackDetected(character, track)
+    if getDistance(character) > MAX_DISTANCE then return end
 
-    local distance = getDistance(character)
+    setBlock(true)
+    faceTarget(character)
 
-    if distance > MAX_DISTANCE then
-        return
-    end
-
-    sequence += 1
-
-    table.insert(attackQueue, {
-        Character = character,
-        Track = track,
-        Distance = distance,
-        Sequence = sequence
-    })
-end
-
-local function sortQueue()
-    table.sort(attackQueue, function(a, b)
-        local aDistance = getDistance(a.Character)
-        local bDistance = getDistance(b.Character)
-
-        if math.abs(aDistance - bDistance) > 0.05 then
-            return aDistance < bDistance
-        end
-
-        return a.Sequence < b.Sequence
+    local finished = false
+    local conn
+    conn = track.Stopped:Connect(function()
+        finished = true
     end)
-end
 
-local function processNext()
-    if processing then
-        return
+    if not track.IsPlaying then
+        finished = true
     end
 
-    processing = true
-
-    while #attackQueue > 0 do
-        sortQueue()
-
-        local attack = table.remove(attackQueue, 1)
-
-        if not attack then
+    while not finished do
+        if not character.Parent or not getRoot(LocalPlayer.Character) then
             break
         end
-
-        local character = attack.Character
-        local track = attack.Track
-
-        if not character
-            or not character.Parent
-            or not track
-        then
-            continue
-        end
-
-        local root = getRoot(LocalPlayer.Character)
-        local targetRoot = getRoot(character)
-
-        if not root or not targetRoot then
-            continue
-        end
-
-        if getDistance(character) > MAX_DISTANCE then
-            continue
-        end
-
-        local oldCFrame = root.CFrame
-
         faceTarget(character)
-        setBlock(true)
-
-        local finished = false
-
-        local connection = track.Stopped:Connect(function()
-            finished = true
-        end)
-
-        if not track.IsPlaying then
-            finished = true
-        end
-
-        while not finished do
-            if not character.Parent then
-                break
-            end
-
-            if not getRoot(LocalPlayer.Character) then
-                break
-            end
-
-            task.wait()
-        end
-
-        connection:Disconnect()
-
-        setBlock(false)
-
-        local currentRoot = getRoot(LocalPlayer.Character)
-
-        if currentRoot and oldCFrame then
-            currentRoot.CFrame = oldCFrame
-        end
-
         task.wait()
     end
 
+    if conn then conn:Disconnect() end
     setBlock(false)
-    processing = false
 end
 
 local function watchCharacter(character)
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-
-    if not humanoid then
-        humanoid = character:WaitForChild("Humanoid", 5)
-    end
-
-    if not humanoid then
-        return
-    end
+    local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid", 5)
+    if not humanoid then return end
 
     humanoid.AnimationPlayed:Connect(function(track)
         local animation = track.Animation
-
-        if not animation then
-            return
-        end
+        if not animation then return end
 
         local id = animation.AnimationId:match("%d+")
+        if not id or not ATTACK_IDS[id] then return end
 
-        if not id or not ATTACK_IDS[id] then
-            return
-        end
-
-        if getDistance(character) > MAX_DISTANCE then
-            return
-        end
-
-        addAttack(character, track)
-        task.spawn(processNext)
+        task.spawn(onAttackDetected, character, track)
     end)
 end
 
 local function watchPlayer(player)
-    if player == LocalPlayer then
-        return
-    end
+    if player == LocalPlayer then return end
 
     if player.Character then
-        task.spawn(function()
-            watchCharacter(player.Character)
-        end)
+        task.spawn(watchCharacter, player.Character)
     end
 
     player.CharacterAdded:Connect(function(character)
@@ -247,9 +113,10 @@ for _, player in ipairs(Players:GetPlayers()) do
     watchPlayer(player)
 end
 
+Players.PlayerAdded:Connect(watchPlayer)
+
 StarterGui:SetCore("SendNotification", {
     Title = "Auto Block JJS",
-    Text = "Script loaded successfully!",
-    Duration = 5,
-    Button1 = "OK"
+    Text = "Early Block version loaded!",
+    Duration = 4
 })
