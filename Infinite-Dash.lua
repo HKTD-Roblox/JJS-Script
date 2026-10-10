@@ -1,5 +1,4 @@
 local oldTick = tick
-
 local fakeTime = oldTick()
 
 hookfunction(tick, function(...)
