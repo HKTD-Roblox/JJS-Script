@@ -1,132 +1,78 @@
 local Players = game:GetService("Players")
-local StarterGui = game:GetService("StarterGui")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
-local JJS_Game = {
-    [9391468976] = true,
-    [17255146011] = true,
-    [18439055812] = true,
-    [17992140683] = true,
-}
+local BlockService = ReplicatedStorage:WaitForChild("Knit", 5):WaitForChild("Knit", 5):WaitForChild("Services", 5):WaitForChild("BlockService", 5):WaitForChild("RE", 5)
+local blockActivated = BlockService:WaitForChild("Activated", 5)
+local blockDeactivated = BlockService:WaitForChild("Deactivated", 5)
 
-if not JJS_Game[game.PlaceId] then
-    LocalPlayer:Kick("This is not Jujutsu Shenanigans game!")
+local isBlocking = false
+
+local function getHRP(char)
+    return char and char:FindFirstChild("HumanoidRootPart")
 end
 
-local MAX_DISTANCE = 18
+local function faceTarget(targetHrp)
+    local char = LocalPlayer.Character
+    local myHrp = getHRP(char)
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
 
-local ATTACK_IDS = {
-    ["rbxassetid://4571259077"] = true,
-    ["rbxassetid://8595975878"] = true,
-    ["rbxassetid://8595975458"] = true,
-    ["rbxassetid://8595974357"] = true,
-}
+    if not myHrp or not targetHrp then return end
+    if hum then hum.AutoRotate = false end
 
-local blocking = false
+    local targetPos = Vector3.new(targetHrp.Position.X, myHrp.Position.Y, targetHrp.Position.Z)
+    myHrp.CFrame = CFrame.lookAt(myHrp.Position, targetPos)
 
-local function getRoot(character)
-    return character and character:FindFirstChild("HumanoidRootPart")
-end
-
-local function getDistance(character)
-    local myRoot = getRoot(LocalPlayer.Character)
-    local targetRoot = getRoot(character)
-    if not myRoot or not targetRoot then
-        return math.huge
-    end
-    return (myRoot.Position - targetRoot.Position).Magnitude
-end
-
-local function setBlock(state)
-    if blocking == state then return end
-    blocking = state
-    VirtualInputManager:SendKeyEvent(state, Enum.KeyCode.F, false, game)
-end
-
-local function faceTarget(character)
-    local myRoot = getRoot(LocalPlayer.Character)
-    local targetRoot = getRoot(character)
-    if not myRoot or not targetRoot then return end
-    local pos = myRoot.Position
-    local targetPos = targetRoot.Position
-    myRoot.CFrame = CFrame.lookAt(pos, Vector3.new(targetPos.X, pos.Y, targetPos.Z))
-end
-
-local function onAttackDetected(character, track)
-    if getDistance(character) > MAX_DISTANCE then return end
-
-    local myRoot = getRoot(LocalPlayer.Character)
-    if not myRoot then return end
-
-    local oldCFrame = myRoot.CFrame
-
-    setBlock(true)
-    faceTarget(character)
-
-    local finished = false
-    local conn = track.Stopped:Connect(function()
-        finished = true
+    task.delay(0.4, function()
+        if hum then hum.AutoRotate = true end
     end)
+end
 
-    if not track.IsPlaying then
-        finished = true
-    end
+local function hookRemote(remote)
+    if not remote:IsA("RemoteEvent") then return end
+    if remote == blockActivated or remote == blockDeactivated then return end
 
-    while not finished do
-        if not character.Parent or not getRoot(LocalPlayer.Character) then
-            break
+    if remote.Name:lower():find("emote") then return end
+
+    remote.OnClientEvent:Connect(function(...)
+        if not _G.AutoBlockEnabled or isBlocking then return end
+
+        local myChar = LocalPlayer.Character
+        local myHrp = getHRP(myChar)
+        if not myHrp then return end
+
+        local enemyHrp = nil
+        for _, arg in pairs({...}) do
+            if typeof(arg) == "Instance" then
+                local char = arg:IsA("Model") and arg or arg:FindFirstAncestorOfClass("Model")
+                
+                if char and char ~= myChar then
+                    local targetHrp = getHRP(char)
+                    if targetHrp then
+                        local dist = (myHrp.Position - targetHrp.Position).Magnitude
+                        if dist <= (_G.AutoBlockDistance or 20) then
+                            enemyHrp = targetHrp
+                            break
+                        end
+                    end
+                end
+            end
         end
-        faceTarget(character)
-        task.wait()
-    end
 
-    if conn then
-        conn:Disconnect()
-    end
+        if enemyHrp then
+            isBlocking = true
+            faceTarget(enemyHrp)
+            blockActivated:FireServer()
 
-    setBlock(false)
-
-    local currentRoot = getRoot(LocalPlayer.Character)
-    if currentRoot and oldCFrame then
-        currentRoot.CFrame = oldCFrame
-    end
-end
-
-local function watchCharacter(character)
-    local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid", 5)
-    if not humanoid then return end
-
-    humanoid.AnimationPlayed:Connect(function(track)
-        local animation = track.Animation
-        if not animation then return end
-
-        if not ATTACK_IDS[animation.AnimationId] then return end
-
-        task.spawn(onAttackDetected, character, track)
+            task.delay(0.4, function()
+                blockDeactivated:FireServer()
+                isBlocking = false
+            end)
+        end
     end)
 end
 
-local function watchPlayer(player)
-    if player == LocalPlayer then return end
-
-    if player.Character then
-        task.spawn(watchCharacter, player.Character)
-    end
-
-    player.CharacterAdded:Connect(function(character)
-        watchCharacter(character)
-    end)
+for _, obj in pairs(ReplicatedStorage:GetDescendants()) do
+    hookRemote(obj)
 end
-
-for _, player in ipairs(Players:GetPlayers()) do
-    watchPlayer(player)
-end
-
-Players.PlayerAdded:Connect(watchPlayer)
-
-StarterGui:SetCore("SendNotification", {
-    Title = "Auto Block JJS",
-    Text = "Script loaded!",
-    Duration = 4
-})
+ReplicatedStorage.DescendantAdded:Connect(hookRemote)
