@@ -1,246 +1,439 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local BLUE = Color3.fromRGB(80, 160, 255)
-local RED = Color3.fromRGB(220, 60, 80)
-local PURPLE = Color3.fromRGB(140, 80, 255)
-local BG = Color3.fromRGB(20, 20, 35)
-local TEXT = Color3.fromRGB(255, 255, 255)
+local OLD_NAME = "AntiCheatBypassUI"
+local old = PlayerGui:FindFirstChild(OLD_NAME)
+if old then old:Destroy() end
 
-local isBusy = false
-local DEFAULT_STATUS = "Anti-Cheat Bypass..."
-local DEFAULT_BYPASS = "BYPASS"
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = OLD_NAME
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = PlayerGui
 
-local function getHRP(char)
-    return char and char:FindFirstChild("HumanoidRootPart")
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.new(0, 240, 0, 175)
+Main.Position = UDim2.new(0.5, -120, 0.5, -87)
+Main.BackgroundColor3 = Color3.fromRGB(12, 14, 28)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 14)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(90, 140, 255)
+MainStroke.Thickness = 2
+MainStroke.Transparency = 0.15
+MainStroke.Parent = Main
+
+local MainGradient = Instance.new("UIGradient")
+MainGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(18, 22, 45)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(12, 14, 28)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 15, 40))
+})
+MainGradient.Rotation = 45
+MainGradient.Parent = Main
+
+local Glow = Instance.new("ImageLabel")
+Glow.Name = "Glow"
+Glow.Size = UDim2.new(1, 40, 1, 40)
+Glow.Position = UDim2.new(0, -20, 0, -20)
+Glow.BackgroundTransparency = 1
+Glow.Image = "rbxassetid://5028857084"
+Glow.ImageColor3 = Color3.fromRGB(80, 140, 255)
+Glow.ImageTransparency = 0.75
+Glow.ScaleType = Enum.ScaleType.Slice
+Glow.SliceCenter = Rect.new(24, 24, 276, 276)
+Glow.ZIndex = 0
+Glow.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, 0, 0, 34)
+Title.Position = UDim2.new(0, 0, 0, 2)
+Title.BackgroundTransparency = 1
+Title.Text = "Anti-Cheat Bypass"
+Title.TextColor3 = Color3.fromRGB(170, 210, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 17
+Title.Parent = Main
+
+local TitleGradient = Instance.new("UIGradient")
+TitleGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 180, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 160, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 120, 160))
+})
+TitleGradient.Parent = Title
+
+local BypassBtn = Instance.new("TextButton")
+BypassBtn.Name = "BypassBtn"
+BypassBtn.Size = UDim2.new(0.86, 0, 0, 34)
+BypassBtn.Position = UDim2.new(0.07, 0, 0, 42)
+BypassBtn.BackgroundColor3 = Color3.fromRGB(35, 75, 190)
+BypassBtn.Text = "BYPASS"
+BypassBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+BypassBtn.Font = Enum.Font.GothamBold
+BypassBtn.TextSize = 15
+BypassBtn.AutoButtonColor = false
+BypassBtn.Parent = Main
+
+local BypassCorner = Instance.new("UICorner")
+BypassCorner.CornerRadius = UDim.new(0, 9)
+BypassCorner.Parent = BypassBtn
+
+local BypassStroke = Instance.new("UIStroke")
+BypassStroke.Color = Color3.fromRGB(100, 180, 255)
+BypassStroke.Thickness = 1.6
+BypassStroke.Parent = BypassBtn
+
+local BypassGrad = Instance.new("UIGradient")
+BypassGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 110, 240)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 60, 170))
+})
+BypassGrad.Rotation = 90
+BypassGrad.Parent = BypassBtn
+
+local CheckBtn = Instance.new("TextButton")
+CheckBtn.Name = "CheckBtn"
+CheckBtn.Size = UDim2.new(0.86, 0, 0, 34)
+CheckBtn.Position = UDim2.new(0.07, 0, 0, 84)
+CheckBtn.BackgroundColor3 = Color3.fromRGB(150, 35, 70)
+CheckBtn.Text = "CHECK"
+CheckBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CheckBtn.Font = Enum.Font.GothamBold
+CheckBtn.TextSize = 15
+CheckBtn.AutoButtonColor = false
+CheckBtn.Parent = Main
+
+local CheckCorner = Instance.new("UICorner")
+CheckCorner.CornerRadius = UDim.new(0, 9)
+CheckCorner.Parent = CheckBtn
+
+local CheckStroke = Instance.new("UIStroke")
+CheckStroke.Color = Color3.fromRGB(230, 90, 130)
+CheckStroke.Thickness = 1.6
+CheckStroke.Parent = CheckBtn
+
+local CheckGrad = Instance.new("UIGradient")
+CheckGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 50, 100)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 25, 55))
+})
+CheckGrad.Rotation = 90
+CheckGrad.Parent = CheckBtn
+
+local Status = Instance.new("TextLabel")
+Status.Name = "Status"
+Status.Size = UDim2.new(1, -20, 0, 30)
+Status.Position = UDim2.new(0, 10, 0, 128)
+Status.BackgroundTransparency = 1
+Status.Text = "Anti-Cheat Bypass..."
+Status.TextColor3 = Color3.fromRGB(190, 200, 230)
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 13
+Status.TextWrapped = true
+Status.Parent = Main
+
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+local function updateDrag(input)
+	local delta = input.Position - dragStart
+	Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
 
-local function getResetRemote()
-    local ok, remote = pcall(function()
-        return ReplicatedStorage:WaitForChild("Knit", 5)
-            :WaitForChild("Knit", 5)
-            :WaitForChild("Services", 5)
-            :WaitForChild("JoinService", 5)
-            :WaitForChild("RE", 5)
-            :WaitForChild("Reset", 5)
-    end)
-    return ok and remote or nil
+Main.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = Main.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+Main.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		if dragging then
+			updateDrag(input)
+		end
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		updateDrag(input)
+	end
+end)
+
+local function hoverEffect(btn, stroke, enterColor, leaveColor)
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.18), {BackgroundColor3 = enterColor}):Play()
+		TweenService:Create(stroke, TweenInfo.new(0.18), {Thickness = 2.4}):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.18), {BackgroundColor3 = leaveColor}):Play()
+		TweenService:Create(stroke, TweenInfo.new(0.18), {Thickness = 1.6}):Play()
+	end)
+end
+
+hoverEffect(BypassBtn, BypassStroke, Color3.fromRGB(55, 105, 230), Color3.fromRGB(35, 75, 190))
+hoverEffect(CheckBtn, CheckStroke, Color3.fromRGB(185, 50, 95), Color3.fromRGB(150, 35, 70))
+
+local function getHRP()
+	local char = LocalPlayer.Character
+	if not char then return nil end
+	return char:FindFirstChild("HumanoidRootPart")
+end
+
+local function getHumanoid()
+	local char = LocalPlayer.Character
+	if not char then return nil end
+	return char:FindFirstChildOfClass("Humanoid")
+end
+
+local function measureDistance(targetHRP)
+	local myHRP = getHRP()
+	if not myHRP or not targetHRP then return math.huge end
+	return (myHRP.Position - targetHRP.Position).Magnitude
+end
+
+local function teleNear(targetHRP, offset)
+	offset = offset or 3
+	local myHRP = getHRP()
+	if not myHRP or not targetHRP then return false end
+	local dir = (myHRP.Position - targetHRP.Position).Unit
+	if dir.Magnitude < 0.1 then
+		dir = Vector3.new(1, 0, 0)
+	end
+	myHRP.CFrame = CFrame.new(targetHRP.Position + dir * offset)
+	return true
 end
 
 local function findFarPlayer(minDist)
-    local myHRP = getHRP(LocalPlayer.Character)
-    if not myHRP then return nil end
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
-            local hrp = getHRP(plr.Character)
-            if hrp then
-                local d = (myHRP.Position - hrp.Position).Magnitude
-                if d >= minDist then
-                    return plr, hrp, d
-                end
-            end
-        end
-    end
-    return nil
+	local myHRP = getHRP()
+	if not myHRP then return nil end
+	local best, bestDist = nil, 0
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character then
+			local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				local d = (myHRP.Position - hrp.Position).Magnitude
+				if d >= minDist and d > bestDist then
+					best = hrp
+					bestDist = d
+				end
+			end
+		end
+	end
+	return best
 end
 
-local function waitForRespawn()
-    local char = LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum and hum.Health > 0 then
-            hum.Health = 0
-        end
-    end
-    local newChar = LocalPlayer.CharacterAdded:Wait()
-    task.wait(0.5)
-    return newChar
+local function findFarPlayerFallback()
+	for _, dist in ipairs({20, 19, 18, 17, 16, 15}) do
+		local target = findFarPlayer(dist)
+		if target then return target, dist end
+	end
+	return nil, nil
 end
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "AntiCheatBypassUI"
-gui.ResetOnSpawn = false
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-local frame = Instance.new("Frame")
-frame.Name = "Main"
-frame.Size = UDim2.new(0, 280, 0, 200)
-frame.Position = UDim2.new(0.5, -140, 0.5, -100)
-frame.BackgroundColor3 = BG
-frame.BorderSizePixel = 0
-frame.Parent = gui
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = frame
-
-local stroke = Instance.new("UIStroke")
-stroke.Color = PURPLE
-stroke.Thickness = 2
-stroke.Parent = frame
-
-local title = Instance.new("TextLabel")
-title.Name = "Title"
-title.Size = UDim2.new(1, -20, 0, 32)
-title.Position = UDim2.new(0, 10, 0, 8)
-title.BackgroundColor3 = PURPLE
-title.BorderSizePixel = 0
-title.Font = Enum.Font.GothamBold
-title.TextSize = 16
-title.TextColor3 = TEXT
-title.Text = "Anti-Cheat Bypass"
-title.Parent = frame
-
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 8)
-titleCorner.Parent = title
-
-local bypassBtn = Instance.new("TextButton")
-bypassBtn.Name = "BypassBtn"
-bypassBtn.Size = UDim2.new(1, -40, 0, 36)
-bypassBtn.Position = UDim2.new(0, 20, 0, 52)
-bypassBtn.BackgroundColor3 = BLUE
-bypassBtn.BorderSizePixel = 0
-bypassBtn.Font = Enum.Font.GothamBold
-bypassBtn.TextSize = 15
-bypassBtn.TextColor3 = TEXT
-bypassBtn.Text = DEFAULT_BYPASS
-bypassBtn.AutoButtonColor = true
-bypassBtn.Parent = frame
-
-local bypassCorner = Instance.new("UICorner")
-bypassCorner.CornerRadius = UDim.new(0, 8)
-bypassCorner.Parent = bypassBtn
-
-local checkBtn = Instance.new("TextButton")
-checkBtn.Name = "CheckBtn"
-checkBtn.Size = UDim2.new(1, -40, 0, 36)
-checkBtn.Position = UDim2.new(0, 20, 0, 96)
-checkBtn.BackgroundColor3 = RED
-checkBtn.BorderSizePixel = 0
-checkBtn.Font = Enum.Font.GothamBold
-checkBtn.TextSize = 15
-checkBtn.TextColor3 = TEXT
-checkBtn.Text = "CHECK"
-checkBtn.AutoButtonColor = true
-checkBtn.Parent = frame
-
-local checkCorner = Instance.new("UICorner")
-checkCorner.CornerRadius = UDim.new(0, 8)
-checkCorner.Parent = checkBtn
-
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Name = "Status"
-statusLabel.Size = UDim2.new(1, -20, 0, 40)
-statusLabel.Position = UDim2.new(0, 10, 0, 144)
-statusLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
-statusLabel.BorderSizePixel = 0
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.TextSize = 13
-statusLabel.TextColor3 = TEXT
-statusLabel.Text = "Status: " .. DEFAULT_STATUS
-statusLabel.TextWrapped = true
-statusLabel.Parent = frame
-
-local statusCorner = Instance.new("UICorner")
-statusCorner.CornerRadius = UDim.new(0, 8)
-statusCorner.Parent = statusLabel
-
-local function setStatus(text)
-    statusLabel.Text = "Status: " .. tostring(text)
+local function fireReset()
+	local ok, remote = pcall(function()
+		return ReplicatedStorage
+			:WaitForChild("Knit", 3)
+			:WaitForChild("Knit", 3)
+			:WaitForChild("Services", 3)
+			:WaitForChild("JoinService", 3)
+			:WaitForChild("RE", 3)
+			:WaitForChild("Reset", 3)
+	end)
+	if ok and remote and remote:IsA("RemoteEvent") then
+		remote:FireServer()
+		return true
+	end
+	return false
 end
 
-local function setBypassText(text)
-    bypassBtn.Text = tostring(text)
+local function waitForRespawn(timeout)
+	timeout = timeout or 8
+	local start = tick()
+	local hum = getHumanoid()
+	if hum and hum.Health > 0 then
+		while hum and hum.Health > 0 and tick() - start < timeout do
+			task.wait(0.1)
+			hum = getHumanoid()
+		end
+	end
+	while tick() - start < timeout do
+		local char = LocalPlayer.Character
+		if char then
+			local hrp = char:FindFirstChild("HumanoidRootPart")
+			local h = char:FindFirstChildOfClass("Humanoid")
+			if hrp and h and h.Health > 0 then
+				task.wait(0.3)
+				return true
+			end
+		end
+		task.wait(0.1)
+	end
+	return false
 end
 
-local function runBypass()
-    if isBusy then return end
-    isBusy = true
-    bypassBtn.AutoButtonColor = false
-    setBypassText("Bypassing...")
-    setStatus("Teleporting...")
+local busy = false
 
-    local myChar = LocalPlayer.Character
-    local myHRP = getHRP(myChar)
-    if not myHRP then
-        setBypassText(DEFAULT_BYPASS)
-        setStatus(DEFAULT_STATUS)
-        isBusy = false
-        bypassBtn.AutoButtonColor = true
-        return
-    end
+BypassBtn.MouseButton1Click:Connect(function()
+	if busy then return end
+	busy = true
+	BypassBtn.Text = "Bypassing..."
+	BypassBtn.Active = false
+	CheckBtn.Active = false
+	Status.Text = "Teleporting..."
+	Status.TextColor3 = Color3.fromRGB(200, 210, 240)
 
-    local originCF = myHRP.CFrame
+	local originalCFrame = nil
+	local myHRP = getHRP()
+	if myHRP then
+		originalCFrame = myHRP.CFrame
+	end
 
-    local function tryOnce()
-        local targetPlr, targetHRP = findFarPlayer(20)
-        if not targetHRP then
-            return nil
-        end
-        local nearPos = targetHRP.Position + Vector3.new(0, 0, 3)
-        myHRP = getHRP(LocalPlayer.Character)
-        if not myHRP then return nil end
-        myHRP.CFrame = CFrame.new(nearPos)
-        task.wait(0.15)
-        myHRP = getHRP(LocalPlayer.Character)
-        if not myHRP or not targetHRP.Parent then return nil end
-        return (myHRP.Position - targetHRP.Position).Magnitude
-    end
+	local success = false
+	local attempts = 0
+	local maxAttempts = 6
 
-    while true do
-        local dist = tryOnce()
-        if dist == nil then
-            setBypassText(DEFAULT_BYPASS)
-            setStatus(DEFAULT_STATUS)
-            isBusy = false
-            bypassBtn.AutoButtonColor = true
-            return
-        end
+	while attempts < maxAttempts and not success do
+		attempts += 1
+		Status.Text = "Teleporting... (" .. attempts .. ")"
 
-        if dist < 10 then
-            myHRP = getHRP(LocalPlayer.Character)
-            if myHRP then
-                myHRP.CFrame = originCF
-            end
-            setBypassText("Bypass successful")
-            setStatus("Bypass successful")
-            task.wait(5)
-            setBypassText(DEFAULT_BYPASS)
-            setStatus(DEFAULT_STATUS)
-            isBusy = false
-            bypassBtn.AutoButtonColor = true
-            return
-        end
+		local target = findFarPlayerFallback()
+		if not target then
+			Status.Text = "Bypass failed"
+			Status.TextColor3 = Color3.fromRGB(255, 90, 90)
+			break
+		end
 
-        if dist > 15 then
-            setStatus("Rubber Banded! Resetting...")
-            local remote = getResetRemote()
-            if remote then
-                pcall(function()
-                    remote:FireServer()
-                end)
-            end
-            waitForRespawn()
-            myHRP = getHRP(LocalPlayer.Character)
-            if myHRP then
-                originCF = myHRP.CFrame
-            end
-            setStatus("Teleporting...")
-        else
-            setStatus("Teleporting...")
-            task.wait(0.2)
-        end
-    end
-end
+		if not originalCFrame then
+			myHRP = getHRP()
+			if myHRP then originalCFrame = myHRP.CFrame end
+		end
 
-bypassBtn.MouseButton1Click:Connect(function()
-    task.spawn(runBypass)
+		teleNear(target, 3)
+		task.wait(0.35)
+
+		local dist = measureDistance(target)
+
+		if dist < 10 then
+			if originalCFrame and getHRP() then
+				getHRP().CFrame = originalCFrame
+			end
+			Status.Text = "Bypass successful"
+			Status.TextColor3 = Color3.fromRGB(80, 255, 140)
+			success = true
+			task.wait(5)
+			break
+		elseif dist > 15 then
+			Status.Text = "Rubber-band detected, resetting..."
+			fireReset()
+			waitForRespawn(8)
+			task.wait(0.5)
+		else
+			task.wait(0.4)
+		end
+	end
+
+	if not success and Status.Text ~= "Bypass failed" then
+		Status.Text = "Bypass failed"
+		Status.TextColor3 = Color3.fromRGB(255, 90, 90)
+	end
+
+	BypassBtn.Text = "BYPASS"
+	BypassBtn.Active = true
+	CheckBtn.Active = true
+	busy = false
+
+	if success then
+		task.wait(0.1)
+		Status.Text = "Anti-Cheat Bypass..."
+		Status.TextColor3 = Color3.fromRGB(190, 200, 230)
+	else
+		task.delay(3, function()
+			if Status.Text == "Bypass failed" then
+				Status.Text = "Anti-Cheat Bypass..."
+				Status.TextColor3 = Color3.fromRGB(190, 200, 230)
+			end
+		end)
+	end
 end)
 
-checkBtn.MouseButton1Click:Connect(function()
+CheckBtn.MouseButton1Click:Connect(function()
+	if busy then return end
+	busy = true
+	CheckBtn.Text = "Checking..."
+	CheckBtn.Active = false
+	BypassBtn.Active = false
+	Status.Text = "Teleporting..."
+	Status.TextColor3 = Color3.fromRGB(200, 210, 240)
+
+	local originalCFrame = nil
+	local myHRP = getHRP()
+	if myHRP then
+		originalCFrame = myHRP.CFrame
+	end
+
+	local target = findFarPlayerFallback()
+	if not target then
+		Status.Text = "Bypass Fail"
+		Status.TextColor3 = Color3.fromRGB(255, 90, 90)
+		CheckBtn.Text = "CHECK"
+		CheckBtn.Active = true
+		BypassBtn.Active = true
+		busy = false
+		task.delay(3, function()
+			Status.Text = "Anti-Cheat Bypass..."
+			Status.TextColor3 = Color3.fromRGB(190, 200, 230)
+		end)
+		return
+	end
+
+	teleNear(target, 3)
+	task.wait(0.4)
+
+	local dist = measureDistance(target)
+
+	if dist < 10 then
+		if originalCFrame and getHRP() then
+			getHRP().CFrame = originalCFrame
+		end
+		Status.Text = "Bypass Success"
+		Status.TextColor3 = Color3.fromRGB(80, 255, 140)
+	else
+		Status.Text = "Bypass Fail"
+		Status.TextColor3 = Color3.fromRGB(255, 90, 90)
+	end
+
+	CheckBtn.Text = "CHECK"
+	CheckBtn.Active = true
+	BypassBtn.Active = true
+	busy = false
+
+	task.delay(5, function()
+		if Status.Text == "Bypass Success" or Status.Text == "Bypass Fail" then
+			Status.Text = "Anti-Cheat Bypass..."
+			Status.TextColor3 = Color3.fromRGB(190, 200, 230)
+		end
+	end)
 end)
