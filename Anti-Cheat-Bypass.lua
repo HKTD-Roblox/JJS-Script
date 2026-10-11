@@ -465,7 +465,7 @@ BypassBtn.MouseButton1Click:Connect(function()
 			task.wait(5)
 			break
 		elseif dist > 15 then
-			Status.Text = "Rubber-band detected, resetting..."
+			Status.Text = "Rubber Banded! Resetting..."
 			fireReset()
 			waitForRespawn(8)
 			task.wait(0.5)
