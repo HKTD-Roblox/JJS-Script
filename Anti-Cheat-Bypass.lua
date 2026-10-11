@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
@@ -17,126 +18,163 @@ ScreenGui.Parent = PlayerGui
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.new(0, 240, 0, 175)
-Main.Position = UDim2.new(0.5, -120, 0.5, -87)
-Main.BackgroundColor3 = Color3.fromRGB(12, 14, 28)
+Main.Size = UDim2.new(0, 255, 0, 185)
+Main.Position = UDim2.new(0.5, -127, 0.5, -92)
+Main.BackgroundColor3 = Color3.fromRGB(6, 5, 12)
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 14)
+MainCorner.CornerRadius = UDim.new(0, 16)
 MainCorner.Parent = Main
 
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(90, 140, 255)
-MainStroke.Thickness = 2
-MainStroke.Transparency = 0.15
+MainStroke.Color = Color3.fromRGB(70, 140, 255)
+MainStroke.Thickness = 2.3
+MainStroke.Transparency = 0.12
 MainStroke.Parent = Main
 
 local MainGradient = Instance.new("UIGradient")
 MainGradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(18, 22, 45)),
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(12, 14, 28)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 15, 40))
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(8, 10, 22)),
+	ColorSequenceKeypoint.new(0.35, Color3.fromRGB(4, 5, 12)),
+	ColorSequenceKeypoint.new(0.7, Color3.fromRGB(12, 6, 24)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(6, 4, 14))
 })
-MainGradient.Rotation = 45
+MainGradient.Rotation = 140
 MainGradient.Parent = Main
 
 local Glow = Instance.new("ImageLabel")
 Glow.Name = "Glow"
-Glow.Size = UDim2.new(1, 40, 1, 40)
-Glow.Position = UDim2.new(0, -20, 0, -20)
+Glow.Size = UDim2.new(1, 55, 1, 55)
+Glow.Position = UDim2.new(0, -27, 0, -27)
 Glow.BackgroundTransparency = 1
 Glow.Image = "rbxassetid://5028857084"
-Glow.ImageColor3 = Color3.fromRGB(80, 140, 255)
-Glow.ImageTransparency = 0.75
+Glow.ImageColor3 = Color3.fromRGB(60, 130, 255)
+Glow.ImageTransparency = 0.7
 Glow.ScaleType = Enum.ScaleType.Slice
 Glow.SliceCenter = Rect.new(24, 24, 276, 276)
 Glow.ZIndex = 0
 Glow.Parent = Main
 
+local Inner = Instance.new("Frame")
+Inner.Name = "Inner"
+Inner.Size = UDim2.new(1, -10, 1, -10)
+Inner.Position = UDim2.new(0, 5, 0, 5)
+Inner.BackgroundTransparency = 1
+Inner.BorderSizePixel = 0
+Inner.Parent = Main
+
+local InnerStroke = Instance.new("UIStroke")
+InnerStroke.Color = Color3.fromRGB(180, 190, 230)
+InnerStroke.Thickness = 1
+InnerStroke.Transparency = 0.72
+InnerStroke.Parent = Inner
+
+local InnerCorner = Instance.new("UICorner")
+InnerCorner.CornerRadius = UDim.new(0, 13)
+InnerCorner.Parent = Inner
+
 local Title = Instance.new("TextLabel")
 Title.Name = "Title"
-Title.Size = UDim2.new(1, 0, 0, 34)
-Title.Position = UDim2.new(0, 0, 0, 2)
+Title.Size = UDim2.new(1, 0, 0, 36)
+Title.Position = UDim2.new(0, 0, 0, 6)
 Title.BackgroundTransparency = 1
 Title.Text = "Anti-Cheat Bypass"
-Title.TextColor3 = Color3.fromRGB(170, 210, 255)
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 17
+Title.TextSize = 18
 Title.Parent = Main
 
 local TitleGradient = Instance.new("UIGradient")
 TitleGradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 180, 255)),
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 160, 255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 120, 160))
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 170, 255)),
+	ColorSequenceKeypoint.new(0.45, Color3.fromRGB(160, 90, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 70, 100))
 })
 TitleGradient.Parent = Title
 
 local BypassBtn = Instance.new("TextButton")
 BypassBtn.Name = "BypassBtn"
-BypassBtn.Size = UDim2.new(0.86, 0, 0, 34)
-BypassBtn.Position = UDim2.new(0.07, 0, 0, 42)
-BypassBtn.BackgroundColor3 = Color3.fromRGB(35, 75, 190)
+BypassBtn.Size = UDim2.new(0.86, 0, 0, 36)
+BypassBtn.Position = UDim2.new(0.07, 0, 0, 48)
+BypassBtn.BackgroundColor3 = Color3.fromRGB(18, 22, 45)
 BypassBtn.Text = "BYPASS"
 BypassBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 BypassBtn.Font = Enum.Font.GothamBold
-BypassBtn.TextSize = 15
+BypassBtn.TextSize = 16
 BypassBtn.AutoButtonColor = false
 BypassBtn.Parent = Main
 
 local BypassCorner = Instance.new("UICorner")
-BypassCorner.CornerRadius = UDim.new(0, 9)
+BypassCorner.CornerRadius = UDim.new(0, 10)
 BypassCorner.Parent = BypassBtn
 
 local BypassStroke = Instance.new("UIStroke")
-BypassStroke.Color = Color3.fromRGB(100, 180, 255)
-BypassStroke.Thickness = 1.6
+BypassStroke.Color = Color3.fromRGB(70, 160, 255)
+BypassStroke.Thickness = 1.8
 BypassStroke.Parent = BypassBtn
 
 local BypassGrad = Instance.new("UIGradient")
 BypassGrad.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 110, 240)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 60, 170))
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 45, 100)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(50, 30, 95)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(35, 15, 55))
 })
 BypassGrad.Rotation = 90
 BypassGrad.Parent = BypassBtn
 
+local BypassTextGrad = Instance.new("UIGradient")
+BypassTextGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 180, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(170, 90, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 75, 110))
+})
+BypassTextGrad.Parent = BypassBtn
+
 local CheckBtn = Instance.new("TextButton")
 CheckBtn.Name = "CheckBtn"
-CheckBtn.Size = UDim2.new(0.86, 0, 0, 34)
-CheckBtn.Position = UDim2.new(0.07, 0, 0, 84)
-CheckBtn.BackgroundColor3 = Color3.fromRGB(150, 35, 70)
+CheckBtn.Size = UDim2.new(0.86, 0, 0, 36)
+CheckBtn.Position = UDim2.new(0.07, 0, 0, 92)
+CheckBtn.BackgroundColor3 = Color3.fromRGB(28, 14, 38)
 CheckBtn.Text = "CHECK"
 CheckBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CheckBtn.Font = Enum.Font.GothamBold
-CheckBtn.TextSize = 15
+CheckBtn.TextSize = 16
 CheckBtn.AutoButtonColor = false
 CheckBtn.Parent = Main
 
 local CheckCorner = Instance.new("UICorner")
-CheckCorner.CornerRadius = UDim.new(0, 9)
+CheckCorner.CornerRadius = UDim.new(0, 10)
 CheckCorner.Parent = CheckBtn
 
 local CheckStroke = Instance.new("UIStroke")
-CheckStroke.Color = Color3.fromRGB(230, 90, 130)
-CheckStroke.Thickness = 1.6
+CheckStroke.Color = Color3.fromRGB(190, 80, 140)
+CheckStroke.Thickness = 1.8
 CheckStroke.Parent = CheckBtn
 
 local CheckGrad = Instance.new("UIGradient")
 CheckGrad.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 50, 100)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 25, 55))
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 25, 70)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(75, 25, 75)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 15, 40))
 })
 CheckGrad.Rotation = 90
 CheckGrad.Parent = CheckBtn
 
+local CheckTextGrad = Instance.new("UIGradient")
+CheckTextGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 180, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(170, 90, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 75, 110))
+})
+CheckTextGrad.Parent = CheckBtn
+
 local Status = Instance.new("TextLabel")
 Status.Name = "Status"
 Status.Size = UDim2.new(1, -20, 0, 30)
-Status.Position = UDim2.new(0, 10, 0, 128)
+Status.Position = UDim2.new(0, 10, 0, 138)
 Status.BackgroundTransparency = 1
 Status.Text = "Anti-Cheat Bypass..."
 Status.TextColor3 = Color3.fromRGB(190, 200, 230)
@@ -183,17 +221,98 @@ end)
 
 local function hoverEffect(btn, stroke, enterColor, leaveColor)
 	btn.MouseEnter:Connect(function()
-		TweenService:Create(btn, TweenInfo.new(0.18), {BackgroundColor3 = enterColor}):Play()
-		TweenService:Create(stroke, TweenInfo.new(0.18), {Thickness = 2.4}):Play()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = enterColor}):Play()
+		TweenService:Create(stroke, TweenInfo.new(0.2), {Thickness = 2.6}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
-		TweenService:Create(btn, TweenInfo.new(0.18), {BackgroundColor3 = leaveColor}):Play()
-		TweenService:Create(stroke, TweenInfo.new(0.18), {Thickness = 1.6}):Play()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = leaveColor}):Play()
+		TweenService:Create(stroke, TweenInfo.new(0.2), {Thickness = 1.8}):Play()
 	end)
 end
 
-hoverEffect(BypassBtn, BypassStroke, Color3.fromRGB(55, 105, 230), Color3.fromRGB(35, 75, 190))
-hoverEffect(CheckBtn, CheckStroke, Color3.fromRGB(185, 50, 95), Color3.fromRGB(150, 35, 70))
+hoverEffect(BypassBtn, BypassStroke, Color3.fromRGB(30, 40, 75), Color3.fromRGB(18, 22, 45))
+hoverEffect(CheckBtn, CheckStroke, Color3.fromRGB(45, 22, 55), Color3.fromRGB(28, 14, 38))
+
+task.spawn(function()
+	while Main and Main.Parent do
+		local t1 = TweenService:Create(Glow, TweenInfo.new(3.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+			ImageTransparency = 0.58,
+			Size = UDim2.new(1, 62, 1, 62),
+			Position = UDim2.new(0, -31, 0, -31)
+		})
+		t1:Play()
+		t1.Completed:Wait()
+		local t2 = TweenService:Create(Glow, TweenInfo.new(3.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+			ImageTransparency = 0.78,
+			Size = UDim2.new(1, 50, 1, 50),
+			Position = UDim2.new(0, -25, 0, -25)
+		})
+		t2:Play()
+		t2.Completed:Wait()
+	end
+end)
+
+task.spawn(function()
+	while Main and Main.Parent do
+		local t1 = TweenService:Create(MainStroke, TweenInfo.new(4.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+			Transparency = 0.05,
+			Thickness = 2.7
+		})
+		t1:Play()
+		t1.Completed:Wait()
+		local t2 = TweenService:Create(MainStroke, TweenInfo.new(4.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+			Transparency = 0.22,
+			Thickness = 2.0
+		})
+		t2:Play()
+		t2.Completed:Wait()
+	end
+end)
+
+task.spawn(function()
+	while Main and Main.Parent do
+		local t1 = TweenService:Create(MainGradient, TweenInfo.new(9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+			Rotation = 175
+		})
+		t1:Play()
+		t1.Completed:Wait()
+		local t2 = TweenService:Create(MainGradient, TweenInfo.new(9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+			Rotation = 115
+		})
+		t2:Play()
+		t2.Completed:Wait()
+	end
+end)
+
+task.spawn(function()
+	while Main and Main.Parent do
+		local t1 = TweenService:Create(InnerStroke, TweenInfo.new(5.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+			Transparency = 0.55
+		})
+		t1:Play()
+		t1.Completed:Wait()
+		local t2 = TweenService:Create(InnerStroke, TweenInfo.new(5.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+			Transparency = 0.82
+		})
+		t2:Play()
+		t2.Completed:Wait()
+	end
+end)
+
+task.spawn(function()
+	while Main and Main.Parent do
+		local t1 = TweenService:Create(TitleGradient, TweenInfo.new(6.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+			Offset = Vector2.new(0.15, 0)
+		})
+		t1:Play()
+		t1.Completed:Wait()
+		local t2 = TweenService:Create(TitleGradient, TweenInfo.new(6.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+			Offset = Vector2.new(-0.15, 0)
+		})
+		t2:Play()
+		t2.Completed:Wait()
+	end
+end)
 
 local function getHRP()
 	local char = LocalPlayer.Character
@@ -303,7 +422,7 @@ BypassBtn.MouseButton1Click:Connect(function()
 	BypassBtn.Active = false
 	CheckBtn.Active = false
 	Status.Text = "Teleporting..."
-	Status.TextColor3 = Color3.fromRGB(200, 210, 240)
+	Status.TextColor3 = Color3.fromRGB(200, 210, 245)
 
 	local originalCFrame = nil
 	local myHRP = getHRP()
@@ -322,7 +441,7 @@ BypassBtn.MouseButton1Click:Connect(function()
 		local target = findFarPlayerFallback()
 		if not target then
 			Status.Text = "Bypass failed"
-			Status.TextColor3 = Color3.fromRGB(255, 90, 90)
+			Status.TextColor3 = Color3.fromRGB(255, 90, 100)
 			break
 		end
 
@@ -341,7 +460,7 @@ BypassBtn.MouseButton1Click:Connect(function()
 				getHRP().CFrame = originalCFrame
 			end
 			Status.Text = "Bypass successful"
-			Status.TextColor3 = Color3.fromRGB(80, 255, 140)
+			Status.TextColor3 = Color3.fromRGB(100, 255, 160)
 			success = true
 			task.wait(5)
 			break
@@ -357,7 +476,7 @@ BypassBtn.MouseButton1Click:Connect(function()
 
 	if not success and Status.Text ~= "Bypass failed" then
 		Status.Text = "Bypass failed"
-		Status.TextColor3 = Color3.fromRGB(255, 90, 90)
+		Status.TextColor3 = Color3.fromRGB(255, 90, 100)
 	end
 
 	BypassBtn.Text = "BYPASS"
@@ -386,7 +505,7 @@ CheckBtn.MouseButton1Click:Connect(function()
 	CheckBtn.Active = false
 	BypassBtn.Active = false
 	Status.Text = "Teleporting..."
-	Status.TextColor3 = Color3.fromRGB(200, 210, 240)
+	Status.TextColor3 = Color3.fromRGB(200, 210, 245)
 
 	local originalCFrame = nil
 	local myHRP = getHRP()
@@ -397,7 +516,7 @@ CheckBtn.MouseButton1Click:Connect(function()
 	local target = findFarPlayerFallback()
 	if not target then
 		Status.Text = "Bypass Fail"
-		Status.TextColor3 = Color3.fromRGB(255, 90, 90)
+		Status.TextColor3 = Color3.fromRGB(255, 90, 100)
 		CheckBtn.Text = "CHECK"
 		CheckBtn.Active = true
 		BypassBtn.Active = true
@@ -419,10 +538,10 @@ CheckBtn.MouseButton1Click:Connect(function()
 			getHRP().CFrame = originalCFrame
 		end
 		Status.Text = "Bypass Success"
-		Status.TextColor3 = Color3.fromRGB(80, 255, 140)
+		Status.TextColor3 = Color3.fromRGB(100, 255, 160)
 	else
 		Status.Text = "Bypass Fail"
-		Status.TextColor3 = Color3.fromRGB(255, 90, 90)
+		Status.TextColor3 = Color3.fromRGB(255, 90, 100)
 	end
 
 	CheckBtn.Text = "CHECK"
