@@ -50,7 +50,7 @@ local function hookRemote(remote)
                     local targetHrp = getHRP(char)
                     if targetHrp then
                         local dist = (myHrp.Position - targetHrp.Position).Magnitude
-                        if dist <= (_G.AutoBlockDistance or 20) then
+                        if dist <= (_G.AutoBlockDistance or 15) then
                             enemyHrp = targetHrp
                             break
                         end
@@ -76,3 +76,9 @@ for _, obj in pairs(ReplicatedStorage:GetDescendants()) do
     hookRemote(obj)
 end
 ReplicatedStorage.DescendantAdded:Connect(hookRemote)
+
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Auto Block",
+    Text = "Script loaded successfully!",
+    Duration = 5
+})
