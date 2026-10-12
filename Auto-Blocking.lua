@@ -117,4 +117,8 @@ distanceBox = Window:AddBox({
     end,
 })
 
+Window:AddLabel({
+    text = "Made by Zorcex",
+})
+
 library:Init()
