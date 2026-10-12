@@ -7,7 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
 _G.AutoBlockEnabled = false
-_G.AutoBlockDistance = 15
+_G.AutoBlockDistance = 10
 
 local BlockService = ReplicatedStorage:WaitForChild("Knit", 8)
     :WaitForChild("Knit", 5)
@@ -32,7 +32,7 @@ local function faceTarget(targetHrp)
     if hum then hum.AutoRotate = false end
     local targetPos = Vector3.new(targetHrp.Position.X, myHrp.Position.Y, targetHrp.Position.Z)
     myHrp.CFrame = CFrame.lookAt(myHrp.Position, targetPos)
-    task.delay(0.45, function()
+    task.delay(0.5, function()
         if hum then hum.AutoRotate = true end
     end)
 end
@@ -42,7 +42,7 @@ local function doBlock(enemyHrp)
     isBlocking = true
     faceTarget(enemyHrp)
     blockActivated:FireServer()
-    task.delay(0.45, function()
+    task.delay(0.5, function()
         blockDeactivated:FireServer()
         isBlocking = false
     end)
@@ -64,7 +64,7 @@ local function hookRemote(remote)
                     local targetHrp = getHRP(char)
                     if targetHrp then
                         local dist = (myHrp.Position - targetHrp.Position).Magnitude
-                        if dist <= (_G.AutoBlockDistance or 15) then
+                        if dist <= (_G.AutoBlockDistance or 10) then
                             doBlock(targetHrp)
                             break
                         end
@@ -92,13 +92,27 @@ Window:AddToggle({
     end,
 })
 
-Window:AddBox({
+local distanceBox
+distanceBox = Window:AddBox({
     text = "Distance",
-    value = "15 Studs",
+    value = "10 Studs",
     callback = function(value)
-        local num = value:match("%d+")
+        local clean = tostring(value or ""):gsub("%s+", " "):match("^%s*(.-)%s*$") or ""
+        local num = clean:match("(%d+)")
         if num then
             _G.AutoBlockDistance = tonumber(num)
+            local forced = num .. " Studs"
+            if clean ~= forced and distanceBox then
+                pcall(function()
+                    if distanceBox.Set then
+                        distanceBox:Set(forced)
+                    elseif distanceBox.SetValue then
+                        distanceBox:SetValue(forced)
+                    elseif distanceBox.Value ~= nil then
+                        distanceBox.Value = forced
+                    end
+                end)
+            end
         end
     end,
 })
