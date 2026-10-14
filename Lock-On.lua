@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -13,7 +14,6 @@ local MARKER_IMAGE = "rbxassetid://262619584"
 
 local MAX_LOCK_DISTANCE = 500
 local HOLD_TO_DRAG_TIME = 2
-local DRAG_THRESHOLD = 8
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SmartLockOnGui"
@@ -141,8 +141,8 @@ local function createMarker(adornee)
 	billboard.Name = "LockTargetMarker"
 	billboard.Adornee = adornee
 	billboard.AlwaysOnTop = true
-	billboard.Size = UDim2.fromOffset(80, 80)
-	billboard.StudsOffsetWorldSpace = Vector3.new(0, 2.2, 0)
+	billboard.Size = UDim2.fromOffset(70, 70)
+	billboard.StudsOffsetWorldSpace = Vector3.new(0, 2.5, 0)
 	billboard.MaxDistance = MAX_LOCK_DISTANCE
 	billboard.Parent = PlayerGui
 	local img = Instance.new("ImageLabel")
@@ -263,8 +263,10 @@ RunService.RenderStepped:Connect(function()
 	local camOffset = myRoot.CFrame:ToWorldSpace(CFrame.new(0, 5.5, 11))
 	local desiredCFrame = CFrame.lookAt(camOffset.Position, lockedPart.Position)
 	Camera.CFrame = Camera.CFrame:Lerp(desiredCFrame, 0.28)
+
 	if markerGui then
-		local size = math.clamp(90 - dist * 0.08, 55, 90)
+		local camDist = (lockedPart.Position - Camera.CFrame.Position).Magnitude
+		local size = math.clamp(1800 / camDist, 38, 95)
 		markerGui.Size = UDim2.fromOffset(size, size)
 	end
 end)
@@ -289,3 +291,10 @@ Players.PlayerRemoving:Connect(function(player)
 		unlock()
 	end
 end)
+
+StarterGui:SetCore("SendNotification", {
+	Title = "Lock-On Script",
+	Text = "Script loaded successfully!,
+	Icon = "rbxassetid://262619584",
+	Duration = 5
+})
