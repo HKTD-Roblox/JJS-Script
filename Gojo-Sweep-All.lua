@@ -2,7 +2,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-
+local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/liebertsx/Tora-Library/main/src/librarynew", true))()
@@ -19,6 +19,16 @@ local CONFIG = {
 }
 
 local resetCount = 0
+
+local function notify(title, text, duration)
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = duration or 3
+        })
+    end)
+end
 
 local function getHRP()
     local char = LocalPlayer.Character
@@ -99,10 +109,8 @@ task.spawn(function()
         if state.SweepAll then
             local myHRP = getHRP()
             local humanoid = getHumanoid()
-
             if myHRP and humanoid and humanoid.Health > 0 then
                 local targets = {}
-
                 for _, p in ipairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                         local hrp = p.Character.HumanoidRootPart
@@ -111,7 +119,6 @@ task.spawn(function()
                         end
                     end
                 end
-
                 for _, obj in ipairs(Workspace:GetDescendants()) do
                     if obj:IsA("Model") and string.lower(obj.Name) == "dummy" then
                         local hrp = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Torso")
@@ -120,7 +127,6 @@ task.spawn(function()
                         end
                     end
                 end
-
                 for _, targetHRP in ipairs(targets) do
                     if not state.SweepAll or not humanoid or humanoid.Health <= 0 then break end
                     if myHRP and targetHRP and targetHRP.Parent then
@@ -139,21 +145,17 @@ task.spawn(function()
         if state.Bypass then
             local hrp = getHRP()
             local humanoid = getHumanoid()
-
             if hrp and humanoid and humanoid.Health > 0 then
                 local targetHumanoid = getTarget(500)
                 local targetHRP = targetHumanoid and targetHumanoid.Parent and (
                     targetHumanoid.Parent:FindFirstChild("HumanoidRootPart") or
                     targetHumanoid.Parent:FindFirstChild("Torso")
                 )
-
                 if targetHRP then
                     local startPos = hrp.Position
                     hrp.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 2.5)
-
                     local teleportedBack = false
                     local timer = 0
-
                     while timer < 3 do
                         task.wait(0.1)
                         timer = timer + 0.1
@@ -165,9 +167,9 @@ task.spawn(function()
                             break
                         end
                     end
-
                     if state.Bypass and humanoid and humanoid.Health > 0 then
                         if teleportedBack then
+                            notify("Anti-Cheat Bypass", "Rubber Band! Reseting...", 2)
                             while state.Bypass and humanoid and humanoid.Health > 0 do
                                 if fireReset() then
                                     resetCount = resetCount + 1
@@ -176,7 +178,9 @@ task.spawn(function()
                                 humanoid = getHumanoid()
                             end
                         else
+                            notify("Anti-Cheat Bypass", "Anti-Cheat Bypass Success", 2)
                             task.wait(2)
+                            notify("Anti-Cheat Bypass", "Resets: " .. tostring(resetCount) .. "", 2)
                         end
                     end
                 end
@@ -186,7 +190,7 @@ task.spawn(function()
 end)
 
 Window:AddToggle({
-    text = "Sweep All",
+    text = "Sweep All Players",
     flag = "SweepAll",
     state = false,
     callback = function(value)
@@ -202,12 +206,13 @@ Window:AddToggle({
         state.Bypass = value
         if value then
             resetCount = 0
+            notify("Anti-Cheat Bypass", "Start Anti-Cheat Bypass...", 2)
         end
     end,
 })
 
 Window:AddToggle({
-    text = "Noclip",
+    text = "Noclip Collision",
     flag = "Noclip",
     state = false,
     callback = function(value)
@@ -215,13 +220,27 @@ Window:AddToggle({
     end,
 })
 
-Window:AddBox({
-    text = "Time",
-    value = "0.05",
+local delayBox
+delayBox = Window:AddBox({
+    text = "Sweep Delay Time",
+    value = "0.05 Second",
     callback = function(value)
-        local num = tonumber(value)
-        if num and num > 0 then
-            CONFIG.SweepTime = num
+        local clean = tostring(value or ""):gsub("%s+", " "):match("^%s*(.-)%s*$") or ""
+        local num = clean:match("(%d*%.?%d+)")
+        if num then
+            CONFIG.SweepTime = tonumber(num)
+            local forced = num .. " Second"
+            if clean ~= forced and delayBox then
+                pcall(function()
+                    if delayBox.Set then
+                        delayBox:Set(forced)
+                    elseif delayBox.SetValue then
+                        delayBox:SetValue(forced)
+                    elseif delayBox.Value ~= nil then
+                        delayBox.Value = forced
+                    end
+                end)
+            end
         end
     end,
 })
